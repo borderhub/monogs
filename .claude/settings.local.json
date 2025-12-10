@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sqlite3:*)",
+      "Bash(npm install:*)",
+      "Bash(node scripts/extract-ghost-data.js:*)",
+      "Bash(node scripts/convert-mobiledoc.js:*)",
+      "Bash(node scripts/update-image-urls.js:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npm run db:migrate:local:*)",
+      "Bash(wrangler d1 create:*)",
+      "Bash(npx wrangler:*)",
+      "Bash(npm test:*)",
+      "Bash(curl:*)",
+      "Bash(lsof -i :3000)",
+      "Bash(kill:*)",
+      "Bash(chmod:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

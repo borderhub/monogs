@@ -1,0 +1,66 @@
+# Ghost データ変換レポート
+生成日時: $(date '+%Y-%m-%d %H:%M:%S')
+
+## Phase 1: データ抽出
+✅ 完了
+
+統計:
+- 記事数: 62 件 (公開: 61, 下書き: 1)
+- タグ数: 16 件
+- ユーザー数: 2 件
+- 設定項目: 6 件
+- 画像パス: 270 件
+
+出力ファイル:
+- posts.json (1.8MB)
+- tags.json (2.4KB)
+- posts_tags.json (21KB)
+- users.json (842B)
+- settings.json (770B)
+- image-mapping.json (15KB)
+
+## Phase 2: データ変換
+✅ 完了
+
+### mobiledoc → Markdown/HTML 変換
+- 正常変換: 62 件
+- フォールバック: 0 件
+- 空コンテンツ: 0 件
+
+出力ファイル:
+- posts-converted.json (924KB)
+
+⚠️ 注意事項:
+- "gallery" カードタイプが未対応（37回出現）
+  → 今後の対応が必要
+
+### 画像URL置換 & データ正規化
+- 日付の正規化: ISO 8601形式に変換
+- スラッグの正規化: 小文字化、特殊文字除去
+- 画像URL置換: 0 件（R2アップロード前のため）
+
+出力ファイル:
+- posts-final.json (924KB)
+
+## 次のステップ
+
+1. **gallery カードタイプのサポート追加**
+   - convert-mobiledoc.js を更新
+   - 画像の配列を処理するロジックを追加
+
+2. **R2 への画像アップロード**
+   - wrangler r2 bucket create monogs-images
+   - node scripts/upload-to-r2.js を実行
+   - image-mapping.json が更新される
+
+3. **画像URL再置換**
+   - R2 アップロード後に再度実行
+   - node scripts/update-image-urls.js
+
+4. **D1 シードスクリプトの作成**
+   - Drizzle スキーマ定義
+   - seed-d1.js の実装
+
+5. **Next.js プロジェクトのセットアップ**
+   - npx create-next-app@latest
+   - Tailwind CSS, Drizzle ORM, NextAuth.js の設定

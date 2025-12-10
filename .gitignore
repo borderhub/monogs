@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.js
+.yarn/install-state.gz
 
 # testing
 /coverage
@@ -11,6 +12,7 @@
 # next.js
 /.next/
 /out/
+.vercel
 
 # production
 /build
@@ -18,6 +20,7 @@
 # misc
 .DS_Store
 *.pem
+.dev-server.pid
 
 # debug
 npm-debug.log*
@@ -27,6 +30,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.production
 
 # vercel
 .vercel
@@ -34,3 +38,38 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Cloudflare
+.wrangler
+.dev.vars
+wrangler.toml.bak
+.open-next/
+
+# Drizzle
+drizzle/migrations/*.sql
+!drizzle/migrations/0000_*.sql
+drizzle/local.db
+drizzle/local.db-shm
+drizzle/local.db-wal
+
+# Migration data (large files)
+migration-data/*.json
+!migration-data/*.md
+
+# Docker/Storage
+.minio.sys/
+
+# IDEs
+.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

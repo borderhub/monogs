@@ -1,0 +1,57 @@
+# Cloudflare Workers / Pages 設定
+
+name = "monogs"
+compatibility_date = "2024-12-01"
+
+# Pages設定
+pages_build_output_dir = ".vercel/output/static"
+
+# D1 データベース
+[[d1_databases]]
+binding = "DB"
+database_name = "monogs-db"
+database_id = "d7781133-52aa-41f4-8a30-af1e6c0934b4"
+migrations_dir = "drizzle/migrations"
+
+# R2 バケット（画像ストレージ）
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "monogs-r2-upload"
+
+# 環境変数（デフォルト: プロダクション用）
+[vars]
+NODE_ENV = "production"
+STORAGE_TYPE = "r2"
+DB_TYPE = "d1"
+
+# プレビュー環境用の設定
+[env.preview]
+[env.preview.vars]
+NODE_ENV = "preview"
+STORAGE_TYPE = "r2"
+DB_TYPE = "d1"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "monogs-db"
+database_id = "d7781133-52aa-41f4-8a30-af1e6c0934b4"
+
+[[env.preview.r2_buckets]]
+binding = "IMAGES"
+bucket_name = "monogs-r2-upload"
+
+# プロダクション環境用の設定
+[env.production]
+[env.production.vars]
+NODE_ENV = "production"
+STORAGE_TYPE = "r2"
+DB_TYPE = "d1"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "monogs-db"
+database_id = "d7781133-52aa-41f4-8a30-af1e6c0934b4"
+
+[[env.production.r2_buckets]]
+binding = "IMAGES"
+bucket_name = "monogs-r2-upload"
