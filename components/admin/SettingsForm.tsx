@@ -166,12 +166,6 @@ export default function SettingsForm({ settings }: SettingsFormProps) {
           {isLoading ? '保存中...' : '設定を保存'}
         </button>
       </div>
-
-      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
-        <p className="text-sm text-yellow-700">
-          ※ 設定機能は現在開発中です。Cloudflare D1統合時に完全に機能します。
-        </p>
-      </div>
     </form>
   );
 }

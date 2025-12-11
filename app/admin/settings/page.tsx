@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import SettingsForm from '@/components/admin/SettingsForm';
+import { getSettings } from '@/lib/db/queries';
 
 export default async function AdminSettingsPage() {
   const session = await auth();
@@ -10,14 +11,21 @@ export default async function AdminSettingsPage() {
     redirect('/auth/signin');
   }
 
-  // TODO: D1データベースから設定を取得する
-  // 現在はモック実装
+  // データベースから設定を取得
+  const settingsData = await getSettings([
+    'site_title',
+    'site_description',
+    'site_url',
+    'og_image',
+    'twitter_handle',
+  ]);
+
   const settings = {
-    siteTitle: 'monogs web site',
-    siteDescription: 'monogs works and art project',
-    siteUrl: 'https://monogs.net',
-    ogImage: '',
-    twitterHandle: '@monogs',
+    siteTitle: settingsData.site_title || 'monogs web site',
+    siteDescription: settingsData.site_description || 'monogs works and art project',
+    siteUrl: settingsData.site_url || 'https://monogs.net',
+    ogImage: settingsData.og_image || '',
+    twitterHandle: settingsData.twitter_handle || '@monogs',
   };
 
   return (

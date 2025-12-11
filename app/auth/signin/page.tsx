@@ -87,12 +87,6 @@ export default function SignInPage() {
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="mt-4 text-center text-sm text-gray-600">
-          <p>Default credentials:</p>
-          <p>Email: admin@monogs.net</p>
-          <p>Password: admin123</p>
-        </div>
       </div>
     </div>
   );

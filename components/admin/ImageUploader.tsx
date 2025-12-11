@@ -6,11 +6,11 @@ interface ImageUploaderProps {
   onUpload: (url: string) => void;
   currentImage?: string;
   label?: string;
-  postId?: string;
+  slug?: string;
   isGallery?: boolean;
 }
 
-export default function ImageUploader({ onUpload, currentImage, label = '画像アップロード', postId, isGallery = false }: ImageUploaderProps) {
+export default function ImageUploader({ onUpload, currentImage, label = '画像アップロード', slug, isGallery = false }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
@@ -71,8 +71,8 @@ export default function ImageUploader({ onUpload, currentImage, label = '画像�
       // アップロード
       const formData = new FormData();
       formData.append('file', file);
-      if (postId) {
-        formData.append('postId', postId);
+      if (slug) {
+        formData.append('slug', slug);
       }
       if (isGallery) {
         formData.append('isGallery', 'true');

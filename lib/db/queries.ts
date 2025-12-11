@@ -5,7 +5,7 @@
 
 import { eq, desc, and, inArray, notInArray } from 'drizzle-orm';
 import { getDb } from './client';
-import { posts, tags, postsTags } from './schema';
+import { posts, tags, postsTags, settings } from './schema';
 import { markdownToHtml } from '@/lib/markdown/converter';
 import { EXCLUDED_TAG_SLUGS } from '@/lib/config/excluded-tags';
 
@@ -87,36 +87,36 @@ function convertPost(raw: typeof posts.$inferSelect): Post {
 }
 
 /**
- * Filter posts by excluded tags
+ * Filter posts by excluded tags (optimized - single query)
  */
 async function filterPostsByExcludedTags(posts: Post[]): Promise<Post[]> {
-  if (EXCLUDED_TAG_SLUGS.length === 0) {
+  if (EXCLUDED_TAG_SLUGS.length === 0 || posts.length === 0) {
     return posts;
   }
 
   const db = getDb();
-  const filteredPosts: Post[] = [];
+  const postIds = posts.map(p => p.id);
 
-  for (const post of posts) {
-    // Get tags for this post
-    const postTagsList = await db
-      .select({
-        tagSlug: tags.slug,
-      })
-      .from(postsTags)
-      .innerJoin(tags, eq(postsTags.tagId, tags.id))
-      .where(eq(postsTags.postId, post.id));
+  // Get all post-tag relationships in a single query
+  const allPostTags = await db
+    .select({
+      postId: postsTags.postId,
+      tagSlug: tags.slug,
+    })
+    .from(postsTags)
+    .innerJoin(tags, eq(postsTags.tagId, tags.id))
+    .where(inArray(postsTags.postId, postIds));
 
-    const hasExcludedTag = postTagsList.some(pt =>
-      EXCLUDED_TAG_SLUGS.includes(pt.tagSlug)
-    );
-
-    if (!hasExcludedTag) {
-      filteredPosts.push(post);
+  // Build a set of post IDs that have excluded tags
+  const excludedPostIds = new Set<string>();
+  allPostTags.forEach((pt: any) => {
+    if (EXCLUDED_TAG_SLUGS.includes(pt.tagSlug)) {
+      excludedPostIds.add(pt.postId);
     }
-  }
+  });
 
-  return filteredPosts;
+  // Filter out posts with excluded tags
+  return posts.filter(post => !excludedPostIds.has(post.id));
 }
 
 /**
@@ -135,19 +135,28 @@ export async function getAllPosts(): Promise<Post[]> {
 }
 
 /**
- * Get all published posts
+ * Get all published posts with optional limit
  */
-export async function getPosts(): Promise<Post[]> {
+export async function getPosts(limit?: number): Promise<Post[]> {
   const db = getDb();
 
-  const result = await db
+  let query = db
     .select()
     .from(posts)
     .where(and(eq(posts.status, 'published'), eq(posts.visibility, 'public')))
     .orderBy(desc(posts.publishedAt));
 
+  if (limit) {
+    // Get more than needed to account for potential filtering
+    query = query.limit(limit * 2);
+  }
+
+  const result = await query;
   const allPosts = result.map(convertPost);
-  return await filterPostsByExcludedTags(allPosts);
+  const filteredPosts = await filterPostsByExcludedTags(allPosts);
+
+  // Apply the actual limit after filtering
+  return limit ? filteredPosts.slice(0, limit) : filteredPosts;
 }
 
 /**
@@ -190,7 +199,7 @@ export async function getPostTags(postId: string): Promise<Tag[]> {
     .where(eq(postsTags.postId, postId))
     .orderBy(postsTags.sortOrder);
 
-  return result.map(tag => ({
+  return result.map((tag: any) => ({
     ...tag,
     visibility: 'public',
     metaTitle: null,
@@ -207,7 +216,7 @@ export async function getTags(): Promise<Tag[]> {
 
   const result = await db.select().from(tags);
 
-  return result.map(tag => ({
+  return result.map((tag: any) => ({
     ...tag,
     visibility: 'public',
     metaTitle: null,
@@ -259,7 +268,7 @@ export async function searchPosts(keyword: string): Promise<Post[]> {
     .orderBy(desc(posts.publishedAt));
 
   // Filter by keyword (title or content)
-  const filtered = result.filter(post => {
+  const filtered = result.filter((post: any) => {
     const titleMatch = post.title.toLowerCase().includes(keyword.toLowerCase());
     const contentMatch = post.content?.toLowerCase().includes(keyword.toLowerCase()) || false;
     const htmlMatch = post.html?.toLowerCase().includes(keyword.toLowerCase()) || false;
@@ -293,7 +302,7 @@ export async function getPostsByTag(tagSlug: string): Promise<Post[]> {
     .from(posts)
     .where(
       and(
-        inArray(posts.id, postIds.map(p => p.postId)),
+        inArray(posts.id, postIds.map((p: any) => p.postId)),
         eq(posts.status, 'published'),
         eq(posts.visibility, 'public')
       )
@@ -357,7 +366,7 @@ export async function getPostCountByTag(tagId: string): Promise<number> {
     .from(posts)
     .where(
       and(
-        inArray(posts.id, postIds.map(p => p.postId)),
+        inArray(posts.id, postIds.map((p: any) => p.postId)),
         eq(posts.status, 'published'),
         eq(posts.visibility, 'public')
       )
@@ -389,7 +398,7 @@ export async function getArchiveList(): Promise<ArchiveMonth[]> {
 
   const archiveMap = new Map<string, number>();
 
-  result.forEach(post => {
+  result.forEach((post: any) => {
     if (post.publishedAt) {
       const date = new Date(post.publishedAt);
       const year = date.getFullYear();
@@ -430,7 +439,7 @@ export async function getPostsByYearMonth(
     .orderBy(desc(posts.publishedAt));
 
   // Filter by year and month
-  const filtered = result.filter(post => {
+  const filtered = result.filter((post: any) => {
     if (!post.publishedAt) return false;
     const date = new Date(post.publishedAt);
     return date.getFullYear() === year && date.getMonth() + 1 === month;
@@ -459,7 +468,7 @@ export async function getRelatedPosts(
     return [];
   }
 
-  const tagIds = currentPostTags.map(pt => pt.tagId);
+  const tagIds = currentPostTags.map((pt: any) => pt.tagId);
 
   // Get other posts with the same tags
   const relatedPostIds = await db
@@ -478,7 +487,7 @@ export async function getRelatedPosts(
 
   // Count tag matches for each post
   const postTagCounts = new Map<string, number>();
-  relatedPostIds.forEach(rp => {
+  relatedPostIds.forEach((rp: any) => {
     postTagCounts.set(rp.postId, (postTagCounts.get(rp.postId) || 0) + 1);
   });
 
@@ -514,4 +523,76 @@ export async function getRelatedPosts(
     .slice(0, limit);
 
   return finalPosts;
+}
+
+// ============================================================================
+// Settings Functions
+// ============================================================================
+
+/**
+ * Get a setting value by key
+ */
+export async function getSetting(key: string): Promise<string | null> {
+  const db = await getDb();
+  const result = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, key))
+    .limit(1);
+
+  return result[0]?.value || null;
+}
+
+/**
+ * Get multiple settings
+ */
+export async function getSettings(keys: string[]): Promise<Record<string, string | null>> {
+  const db = await getDb();
+  const result = await db
+    .select()
+    .from(settings)
+    .where(inArray(settings.key, keys));
+
+  const settingsMap: Record<string, string | null> = {};
+  keys.forEach(key => {
+    settingsMap[key] = null;
+  });
+
+  result.forEach((row: { key: string; value: any }) => {
+    settingsMap[row.key] = row.value;
+  });
+
+  return settingsMap;
+}
+
+/**
+ * Update or insert a setting
+ */
+export async function upsertSetting(key: string, value: string): Promise<void> {
+  const db = await getDb();
+
+  // Check if setting exists
+  const existing = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, key))
+    .limit(1);
+
+  if (existing.length > 0) {
+    // Update
+    await db
+      .update(settings)
+      .set({
+        value,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(settings.key, key));
+  } else {
+    // Insert
+    await db.insert(settings).values({
+      id: `setting_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+      key,
+      value,
+    });
+  }
 }

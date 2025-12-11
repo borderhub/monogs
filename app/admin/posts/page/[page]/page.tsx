@@ -1,21 +1,46 @@
 import { auth } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAllPosts } from '@/lib/db/queries';
 import Pagination from '@/components/Pagination';
 
 const POSTS_PER_PAGE = 20;
 
-export default async function AdminPostsPage() {
+type PageProps = {
+  params: Promise<{
+    page: string;
+  }>;
+};
+
+export default async function AdminPostsPagePaginated({ params }: PageProps) {
   const session = await auth();
 
   if (!session) {
     redirect('/auth/signin');
   }
 
+  const { page: pageParam } = await params;
+  const currentPage = parseInt(pageParam, 10);
+
+  if (isNaN(currentPage) || currentPage < 1) {
+    notFound();
+  }
+
+  // Redirect page 1 to /admin/posts
+  if (currentPage === 1) {
+    redirect('/admin/posts');
+  }
+
   const allPosts = await getAllPosts();
   const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
-  const posts = allPosts.slice(0, POSTS_PER_PAGE);
+
+  if (currentPage > totalPages) {
+    notFound();
+  }
+
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  const endIndex = startIndex + POSTS_PER_PAGE;
+  const posts = allPosts.slice(startIndex, endIndex);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -100,7 +125,7 @@ export default async function AdminPostsPage() {
 
         {totalPages > 1 && (
           <Pagination
-            currentPage={1}
+            currentPage={currentPage}
             totalPages={totalPages}
             maxDisplay={5}
             baseUrl="/admin/posts/page"

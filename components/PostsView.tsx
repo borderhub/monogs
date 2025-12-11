@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import PostCard from '@/components/post/PostCard';
 import PostList from '@/components/post/PostList';
 import ViewToggle from '@/components/ViewToggle';
+import SearchBar from '@/components/SearchBar';
 import type { Post, Tag } from '@/lib/db/queries';
 import { EXCLUDED_TAG_SLUGS } from '@/lib/config/excluded-tags';
 
@@ -55,8 +56,13 @@ export default function PostsView({ posts, tags }: PostsViewProps) {
   return (
     <div className="space-y-6">
       {/* View Toggle */}
-      <div className="flex justify-end mb-6">
-        <ViewToggle onViewChange={handleViewChange} />
+      <div className="flex items-center justify-between mb-6 gap-2">
+        <div className="flex-2 max-w-3xl">
+          <SearchBar />
+        </div>
+        <div className="flex flex-0">  {/* max-w-3xl で広すぎ防止も可 */}
+          <ViewToggle onViewChange={handleViewChange} />
+        </div>
       </div>
 
       {/* Posts Display */}

@@ -1,0 +1,3 @@
+INSERT INTO users (id, name, slug, email, password, bio, profile_image, status, created_at, updated_at) VALUES
+  ('1', 'monogs', 'monogs', 'info@monogs.net', '$2a$10$Dh4OAZAqLMMIHHrFoFykjuQcxyztfANOD6BYFT6EF5rLVxM5gd6dS', '普段はmonogs名義でフリーランスしてます。主な仕事はiOSアプリ開発で、androidやwebのシステム開発も行ってます。また、美術作品の制作や音楽も並行して活動しています。', '/content/images/2019/01/monogs_prof.jpg', 'active', '2025-12-10T09:46:28.817Z', '2025-12-10T09:46:28.817Z'),
+  ('5951f5fca366002ebd5dbef7', 'Ghost', 'ghost', 'ghost-author@example.com', '$2a$10$BBbzw3CZvuB0G7V3.zjh8.qGwG8pgJ1muKyOsgqQxSBO/5axyXYPO', 'You can delete this user to remove all the welcome posts', 'https://static.ghost.org/v2.0.0/images/ghost.png', 'active', '2025-12-10T09:46:28.817Z', '2025-12-10T09:46:28.817Z');

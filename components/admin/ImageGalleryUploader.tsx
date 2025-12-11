@@ -7,14 +7,14 @@ interface ImageGalleryUploaderProps {
   images: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
-  postId?: string;
+  slug?: string;
 }
 
 export default function ImageGalleryUploader({
   images,
   onChange,
   maxImages = 9,
-  postId,
+  slug,
 }: ImageGalleryUploaderProps) {
   const [showUploader, setShowUploader] = useState(false);
 
@@ -104,7 +104,7 @@ export default function ImageGalleryUploader({
           <ImageUploader
             onUpload={handleAddImage}
             label="ギャラリーに画像を追加"
-            postId={postId}
+            slug={slug}
             isGallery={true}
           />
           <button

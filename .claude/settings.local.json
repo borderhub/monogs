@@ -15,7 +15,8 @@
       "Bash(curl:*)",
       "Bash(lsof -i :3000)",
       "Bash(kill:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(npm run deploy:cloudflare:*)"
     ],
     "deny": [],
     "ask": []
