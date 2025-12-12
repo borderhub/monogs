@@ -121,3 +121,27 @@ export function migrateImagePath(oldPath: string, slug: string): string | null {
     month: parseInt(parsed.month!),
   });
 }
+
+/**
+ * 画像パスを完全なURLに変換する
+ * @param path - 画像パス（例: /content/images/2025/10/slug/image.jpg）
+ * @returns 完全なURL
+ */
+export function getImageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+
+  // すでに完全なURLの場合はそのまま返す
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  // 画像ベースURL（環境変数から取得）
+  const imagesUrl = typeof window !== 'undefined'
+    ? process.env.NEXT_PUBLIC_IMAGES_URL
+    : process.env.NEXT_PUBLIC_IMAGES_URL || 'http://localhost:9000/monogs-images';
+
+  // パスの正規化: 先頭の/を削除
+  const imagePath = path.startsWith('/') ? path.substring(1) : path;
+
+  return `${imagesUrl}/${imagePath}`;
+}

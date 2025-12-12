@@ -148,7 +148,8 @@ export async function getPosts(limit?: number): Promise<Post[]> {
 
   if (limit) {
     // Get more than needed to account for potential filtering
-    query = query.limit(limit * 2);
+    // 除外タグが多い場合を考慮して3倍取得
+    query = query.limit(limit * 3);
   }
 
   const result = await query;

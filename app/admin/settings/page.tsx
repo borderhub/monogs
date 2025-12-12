@@ -17,7 +17,11 @@ export default async function AdminSettingsPage() {
     'site_description',
     'site_url',
     'og_image',
-    'twitter_handle',
+    'x_handle',
+    'instagram',
+    'facebook',
+    'bandcamp',
+    'github',
   ]);
 
   const settings = {
@@ -25,7 +29,11 @@ export default async function AdminSettingsPage() {
     siteDescription: settingsData.site_description || 'monogs works and art project',
     siteUrl: settingsData.site_url || 'https://monogs.net',
     ogImage: settingsData.og_image || '',
-    twitterHandle: settingsData.twitter_handle || '@monogs',
+    xHandle: settingsData.x_handle || '',
+    instagram: settingsData.instagram || '',
+    facebook: settingsData.facebook || '',
+    bandcamp: settingsData.bandcamp || '',
+    github: settingsData.github || '',
   };
 
   return (

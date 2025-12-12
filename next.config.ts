@@ -3,21 +3,38 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // 画像最適化（Cloudflare R2対応）
   images: {
+    // Cloudflare Workers環境では画像最適化がサポートされないため unoptimized: true
     unoptimized: true,
-    loader: 'custom',
-    loaderFile: './lib/utils/image-loader.ts',
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '9000',
+        pathname: '/monogs-images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.monogs.net',
+        pathname: '/**',
+      },
+    ],
   },
 
   // リダイレクト設定
   async redirects() {
+    // 開発環境ではMinIO、本番環境ではR2カスタムドメインを使用
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const imageBaseUrl = isDevelopment
+      ? 'http://localhost:9000/monogs-images'
+      : 'https://images.monogs.net';
+
     return [
-      // Ghost CMSの画像パスをR2カスタムドメインにリダイレクト
-      // Note: カスタムドメイン設定(Phase 4-6)完了後に有効化
-      // {
-      //   source: '/content/images/:path*',
-      //   destination: 'https://images.monogs.net/:path*',
-      //   permanent: true,
-      // },
+      // Ghost CMSの画像パスをストレージにリダイレクト
+      {
+        source: '/content/images/:path*',
+        destination: `${imageBaseUrl}/content/images/:path*`,
+        permanent: !isDevelopment,
+      },
       // RSS/Atom フィード (Ghostの標準パス)
       {
         source: '/rss',

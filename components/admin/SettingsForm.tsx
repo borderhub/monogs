@@ -11,7 +11,11 @@ interface SettingsFormProps {
     siteDescription: string;
     siteUrl: string;
     ogImage?: string;
-    twitterHandle?: string;
+    xHandle?: string;
+    instagram?: string;
+    facebook?: string;
+    bandcamp?: string;
+    github?: string;
   };
 }
 
@@ -21,7 +25,11 @@ export default function SettingsForm({ settings }: SettingsFormProps) {
   const [siteDescription, setSiteDescription] = useState(settings.siteDescription || '');
   const [siteUrl, setSiteUrl] = useState(settings.siteUrl || '');
   const [ogImage, setOgImage] = useState(settings.ogImage || '');
-  const [twitterHandle, setTwitterHandle] = useState(settings.twitterHandle || '');
+  const [xHandle, setXHandle] = useState(settings.xHandle || '');
+  const [instagram, setInstagram] = useState(settings.instagram || '');
+  const [facebook, setFacebook] = useState(settings.facebook || '');
+  const [bandcamp, setBandcamp] = useState(settings.bandcamp || '');
+  const [github, setGithub] = useState(settings.github || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -43,7 +51,11 @@ export default function SettingsForm({ settings }: SettingsFormProps) {
           siteDescription,
           siteUrl,
           ogImage,
-          twitterHandle,
+          xHandle,
+          instagram,
+          facebook,
+          bandcamp,
+          github,
         }),
       });
 
@@ -124,6 +136,7 @@ export default function SettingsForm({ settings }: SettingsFormProps) {
           onUpload={(url) => setOgImage(url)}
           currentImage={ogImage}
           label="デフォルトOG画像（SNSシェア用）"
+          slug="settings"
         />
         <div className="mt-2">
           <label htmlFor="ogImage" className="block text-sm font-medium text-gray-700 mb-2">
@@ -143,18 +156,80 @@ export default function SettingsForm({ settings }: SettingsFormProps) {
         </p>
       </div>
 
-      <div>
-        <label htmlFor="twitterHandle" className="block text-sm font-medium text-gray-700 mb-2">
-          Twitterハンドル
-        </label>
-        <input
-          id="twitterHandle"
-          type="text"
-          value={twitterHandle}
-          onChange={(e) => setTwitterHandle(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="@monogs"
-        />
+      <div className="border-t pt-6">
+        <h2 className="text-lg font-semibold mb-4">ソーシャルメディア</h2>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="xHandle" className="block text-sm font-medium text-gray-700 mb-2">
+              X (旧Twitter) ハンドル
+            </label>
+            <input
+              id="xHandle"
+              type="text"
+              value={xHandle}
+              onChange={(e) => setXHandle(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="@monogs"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="instagram" className="block text-sm font-medium text-gray-700 mb-2">
+              Instagram ユーザー名
+            </label>
+            <input
+              id="instagram"
+              type="text"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="monogs"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="facebook" className="block text-sm font-medium text-gray-700 mb-2">
+              Facebook ページURL
+            </label>
+            <input
+              id="facebook"
+              type="url"
+              value={facebook}
+              onChange={(e) => setFacebook(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="https://www.facebook.com/monogs"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="bandcamp" className="block text-sm font-medium text-gray-700 mb-2">
+              Bandcamp URL
+            </label>
+            <input
+              id="bandcamp"
+              type="url"
+              value={bandcamp}
+              onChange={(e) => setBandcamp(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="https://monogs.bandcamp.com"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="github" className="block text-sm font-medium text-gray-700 mb-2">
+              GitHub ユーザー名
+            </label>
+            <input
+              id="github"
+              type="text"
+              value={github}
+              onChange={(e) => setGithub(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="monogs"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="pt-4 border-t">

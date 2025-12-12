@@ -68,9 +68,9 @@ export default function Sidebar() {
       {/* Hamburger Button */}
       <button
         onClick={toggleSidebar}
-        className={`fixed z-50 p-2 transition ${isOpen
+        className={`fixed z-50 p-1 transition ${isOpen
           ? `left-[255px] top-3 bg-gray-200 text-gray-700 hover:bg-gray-100 transition` // Open: PC side edge, mobile fixed
-          : 'lg:left-4 left-4 top-3 bg-gray-800 text-white hover:bg-gray-700 rounded-md' // Closed: Both fixed left
+          : 'lg:left-4 left-3 top-3 bg-gray-800 text-white hover:bg-gray-700 rounded-md' // Closed: Both fixed left
           }`}
         style={{
           transition: 'left 0.3s ease',

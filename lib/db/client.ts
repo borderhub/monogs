@@ -11,6 +11,7 @@ import { cache } from 'react';
 type D1Database = any;
 
 let localDb: any = null;
+let rawSqlite: any = null;
 
 /**
  * Get database client
@@ -46,6 +47,38 @@ export const getDb = cache((): any => {
 
   localDb = drizzleSQLite(sqlite, { schema });
   return localDb;
+});
+
+/**
+ * Get raw SQLite database instance
+ * API routes用に生のSQLiteインスタンスを取得
+ */
+export const getRawDb = cache((): any => {
+  // Cloudflare Workers環境の検出
+  try {
+    const { getCloudflareContext } = require('@opennextjs/cloudflare');
+    const { env } = getCloudflareContext();
+    if (env && env.DB) {
+      // D1の場合はD1インスタンスを返す
+      return env.DB;
+    }
+  } catch (e) {
+    // OpenNext Cloudflare環境でない場合はローカルSQLiteにフォールバック
+  }
+
+  // ローカル SQLite (動的インポート)
+  if (rawSqlite) {
+    return rawSqlite;
+  }
+
+  const Database = require('better-sqlite3');
+  const dbPath = process.env.DATABASE_URL || './drizzle/local.db';
+  rawSqlite = new Database(dbPath);
+
+  // WAL mode for better concurrency
+  rawSqlite.pragma('journal_mode = WAL');
+
+  return rawSqlite;
 });
 
 /**

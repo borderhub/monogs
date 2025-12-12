@@ -42,6 +42,11 @@ export default async function AdminPage() {
             <h3 className="text-xl font-semibold mb-2">設定</h3>
             <p className="text-gray-600">サイトの基本設定を変更します</p>
           </Link>
+
+          <Link href="/admin/db" className="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <h3 className="text-xl font-semibold mb-2">データベース</h3>
+            <p className="text-gray-600">データベースの内容を確認・編集します</p>
+          </Link>
         </div>
 
         <div className="mt-8">

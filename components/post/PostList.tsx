@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Post } from '@/lib/db/queries';
+import { getImageUrl } from '@/lib/utils/image-path';
 
 interface PostListProps {
   post: Post;
@@ -21,14 +22,17 @@ export default function PostList({ post }: PostListProps) {
   // 抜粋テキストを取得（customExcerptまたはhtmlから生成）
   const excerpt = post.customExcerpt || extractExcerpt(post.html);
 
+  // 画像URLを完全なURLに変換
+  const imageUrl = getImageUrl(post.featureImage);
+
   return (
     <article className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition mb-6">
       <div className="flex flex-col md:flex-row">
         {/* 画像 */}
-        {post.featureImage && (
+        {imageUrl && (
           <div className="md:w-1/3 aspect-video md:aspect-square relative flex-shrink-0">
             <Image
-              src={post.featureImage}
+              src={imageUrl}
               alt={post.title}
               fill
               className="object-cover"

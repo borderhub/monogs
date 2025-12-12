@@ -7,6 +7,7 @@ type PaginationProps = {
   totalPages: number;
   maxDisplay: number;
   baseUrl: string;
+  homeUrl?: string; // 1ページ目のURL（デフォルトは "/"）
 };
 
 export default function Pagination({
@@ -14,8 +15,18 @@ export default function Pagination({
   totalPages,
   maxDisplay,
   baseUrl,
+  homeUrl = '/',
 }: PaginationProps) {
   if (totalPages <= 1) return null;
+
+  // ページ番号からURLを生成する関数
+  const getPageUrl = (pageNum: number) => {
+    console.log(`${baseUrl}/${pageNum}`)
+    if (pageNum === 1) {
+      return homeUrl;
+    }
+    return `${baseUrl}/${pageNum}`;
+  };
 
   const displayedPages = Array.from(
     { length: Math.min(maxDisplay, totalPages) },
@@ -43,7 +54,7 @@ export default function Pagination({
         {/* First ボタン */}
         {currentPage > 1 ? (
           <Link
-            href={`${baseUrl}/1`}
+            href={getPageUrl(1)}
             className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-600 hover:text-white hover:border-gray-600 transition-all duration-200 font-medium"
           >
             «
@@ -57,7 +68,7 @@ export default function Pagination({
         {/* Prev ボタン */}
         {currentPage > 1 ? (
           <Link
-            href={`${baseUrl}/${currentPage - 1}`}
+            href={getPageUrl(currentPage - 1)}
             className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-600 hover:text-white hover:border-gray-600 transition-all duration-200 font-medium"
           >
             ← Prev
@@ -72,12 +83,11 @@ export default function Pagination({
         {displayedPages.map((n) => (
           <Link
             key={n}
-            href={`${baseUrl}/${n}`}
-            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              n === currentPage
-                ? 'bg-gray-600 text-white shadow-md'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
-            }`}
+            href={getPageUrl(n)}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${n === currentPage
+              ? 'bg-gray-600 text-white shadow-md'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+              }`}
           >
             {n}
           </Link>
@@ -86,7 +96,7 @@ export default function Pagination({
         {/* Next ボタン */}
         {currentPage < totalPages ? (
           <Link
-            href={`${baseUrl}/${currentPage + 1}`}
+            href={getPageUrl(currentPage + 1)}
             className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-600 hover:text-white hover:border-gray-600 transition-all duration-200 font-medium"
           >
             Next →
@@ -100,7 +110,7 @@ export default function Pagination({
         {/* Last ボタン */}
         {currentPage < totalPages ? (
           <Link
-            href={`${baseUrl}/${totalPages}`}
+            href={getPageUrl(totalPages)}
             className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-600 hover:text-white hover:border-gray-600 transition-all duration-200 font-medium"
           >
             »

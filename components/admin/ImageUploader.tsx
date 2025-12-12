@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, DragEvent } from 'react';
+import { useState, useRef, DragEvent, useMemo } from 'react';
+import { getImageUrl } from '@/lib/utils/image-path';
 
 interface ImageUploaderProps {
   onUpload: (url: string) => void;
@@ -14,8 +15,15 @@ export default function ImageUploader({ onUpload, currentImage, label = '画像�
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
-  const [preview, setPreview] = useState<string>(currentImage || '');
+  const [uploadedPreview, setUploadedPreview] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 表示するプレビュー画像（アップロード済み or 既存画像）
+  const displayPreview = useMemo(() => {
+    if (uploadedPreview) return uploadedPreview;
+    if (currentImage) return getImageUrl(currentImage) || currentImage;
+    return '';
+  }, [uploadedPreview, currentImage]);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -64,7 +72,7 @@ export default function ImageUploader({ onUpload, currentImage, label = '画像�
       // プレビュー表示
       const reader = new FileReader();
       reader.onload = (e) => {
-        setPreview(e.target?.result as string);
+        setUploadedPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
 
@@ -92,7 +100,7 @@ export default function ImageUploader({ onUpload, currentImage, label = '画像�
       onUpload(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'アップロードに失敗しました');
-      setPreview(currentImage || '');
+      setUploadedPreview('');
     } finally {
       setIsUploading(false);
     }
@@ -113,10 +121,10 @@ export default function ImageUploader({ onUpload, currentImage, label = '画像�
           ${isUploading ? 'opacity-50 pointer-events-none' : ''}
         `}
       >
-        {preview ? (
+        {displayPreview ? (
           <div className="relative">
             <img
-              src={preview}
+              src={displayPreview}
               alt="Preview"
               className="max-h-48 mx-auto rounded"
             />
@@ -124,7 +132,7 @@ export default function ImageUploader({ onUpload, currentImage, label = '画像�
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setPreview('');
+                setUploadedPreview('');
                 onUpload('');
               }}
               className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700"
