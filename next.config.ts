@@ -3,16 +3,57 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // 画像最適化（Cloudflare R2対応）
   images: {
+    // Cloudflare Workers環境では画像最適化がサポートされないため unoptimized: true
     unoptimized: true,
-    loader: 'custom',
-    loaderFile: './lib/utils/image-loader.ts',
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '9000',
+        pathname: '/monogs-images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.monogs.net',
+        pathname: '/**',
+      },
+    ],
   },
 
   // リダイレクト設定
-  // 開発環境では不要、本番環境で必要に応じて設定
-  // async redirects() {
-  //   return [];
-  // },
+  async redirects() {
+    // 開発環境ではMinIO、本番環境ではR2カスタムドメインを使用
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const imageBaseUrl = isDevelopment
+      ? 'http://localhost:9000/monogs-images'
+      : 'https://images.monogs.net';
+
+    return [
+      // Ghost CMSの画像パスをストレージにリダイレクト
+      {
+        source: '/content/images/:path*',
+        destination: `${imageBaseUrl}/content/images/:path*`,
+        permanent: !isDevelopment,
+      },
+      // RSS/Atom フィード (Ghostの標準パス)
+      {
+        source: '/rss',
+        destination: '/api/rss',
+        permanent: true,
+      },
+      {
+        source: '/feed',
+        destination: '/api/rss',
+        permanent: true,
+      },
+      // 旧Ghostの著者ページ（実装がない場合はホームへリダイレクト）
+      {
+        source: '/author/:slug',
+        destination: '/',
+        permanent: false,
+      },
+    ];
+  },
 
   // TypeScript設定
   typescript: {
@@ -26,6 +67,19 @@ const nextConfig: NextConfig = {
   experimental: {
     // Cloudflare Workers環境でのパフォーマンス最適化
     optimizePackageImports: ['react', 'react-dom', 'next-auth'],
+  },
+
+  // Turbopack設定（Next.js 16+）
+  turbopack: {},
+
+  // Webpack設定: Cloudflare Workersで不要なパッケージを除外
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // better-sqlite3はローカル開発専用。Cloudflare WorkersではD1を使用
+      config.externals = config.externals || [];
+      config.externals.push('better-sqlite3');
+    }
+    return config;
   },
 };
 

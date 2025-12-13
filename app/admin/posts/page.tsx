@@ -2,6 +2,9 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getAllPosts } from '@/lib/db/queries';
+import Pagination from '@/components/Pagination';
+
+const POSTS_PER_PAGE = 20;
 
 export default async function AdminPostsPage() {
   const session = await auth();
@@ -10,7 +13,9 @@ export default async function AdminPostsPage() {
     redirect('/auth/signin');
   }
 
-  const posts = await getAllPosts();
+  const allPosts = await getAllPosts();
+  const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
+  const posts = allPosts.slice(0, POSTS_PER_PAGE);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -92,6 +97,15 @@ export default async function AdminPostsPage() {
             </div>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={1}
+            totalPages={totalPages}
+            maxDisplay={5}
+            baseUrl="/admin/posts/page"
+          />
+        )}
 
         <div className="mt-6">
           <Link href="/admin" className="text-blue-600 hover:underline">

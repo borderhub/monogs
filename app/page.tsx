@@ -1,22 +1,35 @@
 import Link from 'next/link';
-import { getPosts, getTags } from '@/lib/db/queries';
+import { getPosts, getTags, getSettings } from '@/lib/db/queries';
 import PostsView from '@/components/PostsView';
 import Pagination from '@/components/Pagination';
 
 const POSTS_PER_PAGE = 10;
 
+// Force dynamic rendering to access D1 database
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
-  const allPosts = await getPosts();
+  // Get only the posts we need for the first page
+  const posts = await getPosts(POSTS_PER_PAGE);
   const tags = await getTags();
+
+  // For pagination, we still need the total count
+  const allPosts = posts.length < POSTS_PER_PAGE ? posts : await getPosts();
   const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
-  const posts = allPosts.slice(0, POSTS_PER_PAGE);
+  const settings = await getSettings([
+    'site_title',
+    'site_description',
+    'site_url',
+    'og_image',
+    'twitter_handle',
+  ]);
 
   return (
     <div className="container mx-auto px-4 py-12">
       <section className="mb-12">
-        <h1 className="text-4xl font-bold mb-4">Welcome to monogs</h1>
+        <h1 className="text-4xl font-bold mb-4">{settings.site_title}</h1>
         <p className="text-lg text-gray-600">
-          monogs works and art project
+          {settings.site_description}
         </p>
       </section>
 

@@ -156,7 +156,6 @@ export default function PostForm({ post, isEdit = false, allTags = [], postTags 
   useEffect(() => {
     // 既存の投稿の場合、紐付けられているタグを選択状態にする
     const initialTagIds = postTags?.map(tag => tag.id) || [];
-    console.log(initialTagIds)
     if (initialTagIds.length > 0)
       setSelectedTagIds(initialTagIds);
 
@@ -305,8 +304,8 @@ export default function PostForm({ post, isEdit = false, allTags = [], postTags 
               onImageUpload={async (file) => {
                 const formData = new FormData();
                 formData.append('file', file);
-                if (post?.id) {
-                  formData.append('postId', post.id);
+                if (slug) {
+                  formData.append('slug', slug);
                 }
                 const response = await fetch('/api/upload', {
                   method: 'POST',
@@ -357,7 +356,7 @@ export default function PostForm({ post, isEdit = false, allTags = [], postTags 
               onUpload={(url) => setFeatureImage(url)}
               currentImage={featureImage}
               label="アイキャッチ画像"
-              postId={post?.id}
+              slug={slug}
             />
             <div className="mt-2">
               <label htmlFor="featureImage" className="block text-sm font-medium text-gray-700 mb-2">
@@ -379,7 +378,7 @@ export default function PostForm({ post, isEdit = false, allTags = [], postTags 
               images={galleryImages}
               onChange={setGalleryImages}
               maxImages={9}
-              postId={post?.id}
+              slug={slug}
             />
           </div>
 

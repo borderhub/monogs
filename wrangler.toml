@@ -1,19 +1,22 @@
-# Cloudflare Workers / Pages 設定
+# Cloudflare Workers 設定 (OpenNext Cloudflare)
 
 name = "monogs"
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+main = ".open-next/worker.js"
 
-# Pages設定
-pages_build_output_dir = ".vercel/output/static"
+# 静的アセットは .open-next/assets から自動的に配信されます
+[assets]
+directory = ".open-next/assets"
 
-# D1 データベース
+# D1 データベース（デフォルト: production）
 [[d1_databases]]
 binding = "DB"
 database_name = "monogs-db"
 database_id = "d7781133-52aa-41f4-8a30-af1e6c0934b4"
 migrations_dir = "drizzle/migrations"
 
-# R2 バケット（画像ストレージ）
+# R2 バケット（デフォルト: production）
 [[r2_buckets]]
 binding = "IMAGES"
 bucket_name = "monogs-r2-upload"
@@ -23,6 +26,9 @@ bucket_name = "monogs-r2-upload"
 NODE_ENV = "production"
 STORAGE_TYPE = "r2"
 DB_TYPE = "d1"
+NEXTAUTH_URL = "https://monogs.shirabegroup.workers.dev"
+# R2カスタムドメイン設定完了後に有効化
+NEXT_PUBLIC_IMAGES_URL = "https://images.monogs.net"
 
 # プレビュー環境用の設定
 [env.preview]
@@ -30,15 +36,17 @@ DB_TYPE = "d1"
 NODE_ENV = "preview"
 STORAGE_TYPE = "r2"
 DB_TYPE = "d1"
+NEXTAUTH_URL = "https://monogs-preview.shirabegroup.workers.dev"
+NEXT_PUBLIC_IMAGES_URL = "https://images-preview.monogs.net"
 
 [[env.preview.d1_databases]]
 binding = "DB"
-database_name = "monogs-db"
-database_id = "d7781133-52aa-41f4-8a30-af1e6c0934b4"
+database_name = "monogs-db-preview"
+database_id = "5565ffae-d186-4991-9893-c83f5203a6c5"
 
 [[env.preview.r2_buckets]]
 binding = "IMAGES"
-bucket_name = "monogs-r2-upload"
+bucket_name = "monogs-r2-preview"
 
 # プロダクション環境用の設定
 [env.production]
@@ -46,6 +54,8 @@ bucket_name = "monogs-r2-upload"
 NODE_ENV = "production"
 STORAGE_TYPE = "r2"
 DB_TYPE = "d1"
+NEXTAUTH_URL = "https://monogs-production.shirabegroup.workers.dev"
+NEXT_PUBLIC_IMAGES_URL = "https://images.monogs.net"
 
 [[env.production.d1_databases]]
 binding = "DB"

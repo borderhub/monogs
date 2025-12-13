@@ -4,30 +4,40 @@
  */
 
 import { drizzle as drizzleD1 } from 'drizzle-orm/d1';
-import { drizzle as drizzleSQLite } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
 import * as schema from './schema';
+import { cache } from 'react';
 
-let db: ReturnType<typeof drizzleSQLite> | null = null;
+// Cloudflare D1Database型定義
+type D1Database = any;
+
+let localDb: any = null;
+let rawSqlite: any = null;
 
 /**
  * Get database client
- * ローカル開発環境ではSQLite、本番環境ではD1を使用
+ * Workers環境ではD1、ローカル開発環境ではSQLiteを使用
  */
-export function getDb() {
-  const dbType = process.env.DB_TYPE || 'sqlite';
-
-  if (dbType === 'd1') {
-    // Cloudflare D1 (本番環境)
-    // D1はCloudflare Workers/Pages Functions環境でのみ使用可能
-    // Next.jsビルド時はこのパスは通らない想定
-    throw new Error('D1 is only available in Cloudflare Workers environment. Use getD1Db() instead.');
+export const getDb = cache((): any => {
+  // Cloudflare Workers環境の検出とD1使用
+  try {
+    const { getCloudflareContext } = require('@opennextjs/cloudflare');
+    const { env } = getCloudflareContext();
+    if (env && env.DB) {
+      // Cloudflare D1を使用
+      return drizzleD1(env.DB, { schema });
+    }
+  } catch (e) {
+    // OpenNext Cloudflare環境でない場合はローカルSQLiteにフォールバック
   }
 
-  // ローカル SQLite
-  if (db) {
-    return db;
+  // ローカル SQLite (動的インポート)
+  if (localDb) {
+    return localDb;
   }
+
+  // 動的にインポート (Workers環境では実行されない)
+  const { drizzle: drizzleSQLite } = require('drizzle-orm/better-sqlite3');
+  const Database = require('better-sqlite3');
 
   const dbPath = process.env.DATABASE_URL || './drizzle/local.db';
   const sqlite = new Database(dbPath);
@@ -35,16 +45,49 @@ export function getDb() {
   // WAL mode for better concurrency
   sqlite.pragma('journal_mode = WAL');
 
-  db = drizzleSQLite(sqlite, { schema });
-  return db;
-}
+  localDb = drizzleSQLite(sqlite, { schema });
+  return localDb;
+});
+
+/**
+ * Get raw SQLite database instance
+ * API routes用に生のSQLiteインスタンスを取得
+ */
+export const getRawDb = cache((): any => {
+  // Cloudflare Workers環境の検出
+  try {
+    const { getCloudflareContext } = require('@opennextjs/cloudflare');
+    const { env } = getCloudflareContext();
+    if (env && env.DB) {
+      // D1の場合はD1インスタンスを返す
+      return env.DB;
+    }
+  } catch (e) {
+    // OpenNext Cloudflare環境でない場合はローカルSQLiteにフォールバック
+  }
+
+  // ローカル SQLite (動的インポート)
+  if (rawSqlite) {
+    return rawSqlite;
+  }
+
+  const Database = require('better-sqlite3');
+  const dbPath = process.env.DATABASE_URL || './drizzle/local.db';
+  rawSqlite = new Database(dbPath);
+
+  // WAL mode for better concurrency
+  rawSqlite.pragma('journal_mode = WAL');
+
+  return rawSqlite;
+});
 
 /**
  * Get D1 database client (Cloudflare Workers/Pages Functions)
  * @param d1Database - D1Database instance from Cloudflare environment
  */
-export function getD1Db(d1Database: IDBDatabase) {
+export function getD1Db(d1Database: D1Database) {
   return drizzleD1(d1Database, { schema });
 }
 
-export type DbClient = ReturnType<typeof getDb>;
+// 型定義を緩和して互換性を確保
+export type DbClient = any;

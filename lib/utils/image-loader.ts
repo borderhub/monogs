@@ -5,6 +5,11 @@
  * 本番環境: Cloudflare R2 から画像を配信
  *
  * NEXT_PUBLIC_IMAGES_URL 環境変数で切り替え
+ *
+ * 対応パス形式:
+ * - 旧形式: /content/images/YYYY/MM/filename.ext
+ * - 新形式: /content/images/YYYY/MM/[slug]/filename.ext
+ * - 新形式（ギャラリー）: /content/images/YYYY/MM/[slug]/gallery/filename.ext
  */
 
 export default function cloudflareImageLoader({ src, width, quality }: {
@@ -20,17 +25,21 @@ export default function cloudflareImageLoader({ src, width, quality }: {
   // 画像ベースURL（MinIO または R2）
   const imagesUrl = process.env.NEXT_PUBLIC_IMAGES_URL;
 
-  // 相対パスの場合は先頭の/を削除（ストレージのキーとして使用）
-  const imagePath = src.startsWith('/') ? src.substring(1) : src;
+  // パスの正規化: 先頭の/を削除（ストレージのキーとして使用）
+  let imagePath = src.startsWith('/') ? src.substring(1) : src;
 
-  // ストレージのベースURLが設定されている場合
+  // /content/images/ パスの場合、そのまま使用（新旧両方の形式に対応）
+  // MinIO/R2 のストレージキーとして直接使用される
+  if (imagePath.startsWith('content/images/')) {
+    if (imagesUrl) {
+      return `${imagesUrl}/${imagePath}`;
+    }
+    // 環境変数が未設定の場合は Next.js のリダイレクトルールを使用
+    return `/${imagePath}`;
+  }
+
+  // その他のパスの場合はそのまま返す
   if (imagesUrl) {
-    // Cloudflare Image Resizingを使用する場合（R2のみ）
-    // 注: 無料プランでは利用不可、必要に応じてコメント解除
-    // if (imagesUrl.includes('r2.cloudflarestorage.com') || imagesUrl.includes('images.monogs.net')) {
-    //   return `${imagesUrl}/cdn-cgi/image/width=${width},quality=${quality || 75}/${imagePath}`;
-    // }
-
     return `${imagesUrl}/${imagePath}`;
   }
 

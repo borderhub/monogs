@@ -1,0 +1,17 @@
+INSERT INTO tags (id, name, slug, description, feature_image) VALUES
+  ('65fd45240dc951394b097311', 'air', 'air', NULL, NULL),
+  ('5c39e973997d8d09ca26a569', 'archive', 'archive', 'archive', NULL),
+  ('5da7d42d997d8d09ca26ac7c', 'art', 'art', NULL, NULL),
+  ('5c3981f8b3790e3604fbdfd1', 'diary', 'diary', 'Write a diary | 日記', NULL),
+  ('5e7adab60dc951394b096dec', 'docker', 'docker', NULL, NULL),
+  ('5c39de6e997d8d09ca26a551', 'exhibition', 'exhibition', 'exhibition | 展覧会', NULL),
+  ('5e7adacc0dc951394b096df1', 'java', 'java', NULL, NULL),
+  ('5c3b5c65997d8d09ca26a5dc', 'music', 'music', 'music | 音楽', NULL),
+  ('5e7adab60dc951394b096ded', 'php', 'php', NULL, NULL),
+  ('5c79dfa5997d8d09ca26a837', 'progress-report', 'progress-report', 'Progress Report | 経過報告', NULL),
+  ('5c39efec997d8d09ca26a57d', 'recent-post', 'recent-post', 'recent post | 直近の記事', NULL),
+  ('5d7875d5997d8d09ca26ac1b', 'tips', 'tips', 'tips | ちょっとした小技やコツなど', NULL),
+  ('676ceacb0dc951394b0973ef', 'trip', 'trip', NULL, NULL),
+  ('5e7adacc0dc951394b096df0', 'vagrant', 'vagrant', NULL, NULL),
+  ('5c3abc79997d8d09ca26a593', 'works', 'works', 'works | 仕事', NULL),
+  ('5c39e915997d8d09ca26a568', 'yoin-callback', 'yoin-callback', 'yoin-callback', NULL);

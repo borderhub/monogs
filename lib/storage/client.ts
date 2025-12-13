@@ -1,13 +1,14 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 
 export interface StorageConfig {
-  type: 'minio' | 'r2';
+  type: 'minio' | 'r2' | 'r2-binding';
   endpoint?: string;
-  accessKeyId: string;
-  secretAccessKey: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
   bucket: string;
   region?: string;
   publicUrl: string;
+  r2Bucket?: any; // R2Bucket binding from Cloudflare Workers
 }
 
 export interface UploadResult {
@@ -17,11 +18,17 @@ export interface UploadResult {
 }
 
 class StorageClient {
-  private s3Client: S3Client;
+  private s3Client?: S3Client;
   private config: StorageConfig;
 
   constructor(config: StorageConfig) {
     this.config = config;
+
+    // Cloudflare Workers R2 Binding - no S3 client needed
+    if (config.type === 'r2-binding') {
+      // R2 binding is used directly, no need to initialize S3 client
+      return;
+    }
 
     if (config.type === 'minio') {
       // MinIO configuration
@@ -29,19 +36,19 @@ class StorageClient {
         endpoint: config.endpoint,
         region: config.region || 'us-east-1',
         credentials: {
-          accessKeyId: config.accessKeyId,
-          secretAccessKey: config.secretAccessKey,
+          accessKeyId: config.accessKeyId!,
+          secretAccessKey: config.secretAccessKey!,
         },
         forcePathStyle: true, // MinIO requires path-style URLs
       });
     } else {
-      // Cloudflare R2 configuration
+      // Cloudflare R2 configuration via S3 API
       this.s3Client = new S3Client({
         region: 'auto',
         endpoint: config.endpoint,
         credentials: {
-          accessKeyId: config.accessKeyId,
-          secretAccessKey: config.secretAccessKey,
+          accessKeyId: config.accessKeyId!,
+          secretAccessKey: config.secretAccessKey!,
         },
       });
     }
@@ -51,6 +58,28 @@ class StorageClient {
    * Upload a file to storage
    */
   async upload(key: string, body: Buffer, contentType: string): Promise<UploadResult> {
+    // Use R2 binding directly in Cloudflare Workers environment
+    if (this.config.type === 'r2-binding' && this.config.r2Bucket) {
+      await this.config.r2Bucket.put(key, body, {
+        httpMetadata: {
+          contentType: contentType,
+        },
+      });
+
+      const url = `${this.config.publicUrl}/${key}`;
+
+      return {
+        url,
+        key,
+        bucket: this.config.bucket,
+      };
+    }
+
+    // Use S3 API for local development or R2 via S3
+    if (!this.s3Client) {
+      throw new Error('S3 client not initialized');
+    }
+
     const command = new PutObjectCommand({
       Bucket: this.config.bucket,
       Key: key,
@@ -73,6 +102,17 @@ class StorageClient {
    * Delete a file from storage
    */
   async delete(key: string): Promise<void> {
+    // Use R2 binding directly in Cloudflare Workers environment
+    if (this.config.type === 'r2-binding' && this.config.r2Bucket) {
+      await this.config.r2Bucket.delete(key);
+      return;
+    }
+
+    // Use S3 API for local development or R2 via S3
+    if (!this.s3Client) {
+      throw new Error('S3 client not initialized');
+    }
+
     const command = new DeleteObjectCommand({
       Bucket: this.config.bucket,
       Key: key,
@@ -85,6 +125,20 @@ class StorageClient {
    * Get a file from storage
    */
   async get(key: string): Promise<Buffer> {
+    // Use R2 binding directly in Cloudflare Workers environment
+    if (this.config.type === 'r2-binding' && this.config.r2Bucket) {
+      const object = await this.config.r2Bucket.get(key);
+      if (!object) {
+        throw new Error(`Object not found: ${key}`);
+      }
+      return Buffer.from(await object.arrayBuffer());
+    }
+
+    // Use S3 API for local development or R2 via S3
+    if (!this.s3Client) {
+      throw new Error('S3 client not initialized');
+    }
+
     const command = new GetObjectCommand({
       Bucket: this.config.bucket,
       Key: key,
@@ -92,13 +146,13 @@ class StorageClient {
 
     const response = await this.s3Client.send(command);
     const stream = response.Body as any;
-    
+
     // Convert stream to buffer
     const chunks: Buffer[] = [];
     for await (const chunk of stream) {
       chunks.push(chunk);
     }
-    
+
     return Buffer.concat(chunks);
   }
 
@@ -118,6 +172,28 @@ export function getStorageClient(): StorageClient {
     return storageClient;
   }
 
+  // Cloudflare Workers環境の検出とR2バインディング使用
+  try {
+    const { getCloudflareContext } = require('@opennextjs/cloudflare');
+    const { env } = getCloudflareContext();
+
+    if (env && env.IMAGES) {
+      // Cloudflare Workers環境: R2バインディングを直接使用
+      const publicUrl = env.NEXT_PUBLIC_IMAGES_URL || 'https://images.monogs.net';
+      const config: StorageConfig = {
+        type: 'r2-binding',
+        bucket: 'IMAGES', // バインディング名
+        publicUrl: publicUrl,
+        r2Bucket: env.IMAGES, // R2Bucket binding
+      };
+      storageClient = new StorageClient(config);
+      return storageClient;
+    }
+  } catch (e) {
+    // OpenNext Cloudflare環境でない場合はローカルストレージにフォールバック
+  }
+
+  // ローカル開発環境: MinIOまたはR2 via S3 API
   const storageType = process.env.STORAGE_TYPE || 'minio';
 
   if (storageType === 'minio') {

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const postId = formData.get('postId') as string;
+    const slug = formData.get('slug') as string; // 記事のslugを使用
     const isGallery = formData.get('isGallery') === 'true';
 
     if (!file) {
@@ -48,12 +48,12 @@ export async function POST(request: NextRequest) {
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const fileName = `${timestamp}-${sanitizedFileName}`;
 
-    // パスの構築: postIdがある場合は投稿専用ディレクトリ、ない場合は共通ディレクトリ
+    // パスの構築: slugがある場合は記事専用ディレクトリ、ない場合は共通ディレクトリ
     let key: string;
-    if (postId) {
-      // 投稿IDベースのディレクトリ: /content/images/YYYY/MM/[postId]/[gallery/]filename
+    if (slug) {
+      // slugベースのディレクトリ: /content/images/YYYY/MM/[slug]/[gallery/]filename
       const galleryPath = isGallery ? 'gallery/' : '';
-      key = `content/images/${year}/${month}/${postId}/${galleryPath}${fileName}`;
+      key = `content/images/${year}/${month}/${slug}/${galleryPath}${fileName}`;
     } else {
       // 共通ディレクトリ（後方互換性のため）
       key = `content/images/${year}/${month}/${fileName}`;

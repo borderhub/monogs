@@ -1,53 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
 type ViewMode = 'grid' | 'list';
 
 interface ViewToggleProps {
+  viewMode: ViewMode;
   onViewChange: (mode: ViewMode) => void;
 }
 
-export default function ViewToggle({ onViewChange }: ViewToggleProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Initialize from localStorage
-  useEffect(() => {
-    setIsMounted(true);
-    const stored = localStorage.getItem('postViewMode') as ViewMode | null;
-    if (stored && (stored === 'grid' || stored === 'list')) {
-      setViewMode(stored);
-      onViewChange(stored);
-    } else {
-      // Default to grid
-      setViewMode('grid');
-      onViewChange('grid');
-    }
-  }, []);
-
+export default function ViewToggle({ viewMode, onViewChange }: ViewToggleProps) {
   // Save to localStorage when changed
   const handleViewChange = (mode: ViewMode) => {
-    setViewMode(mode);
-    localStorage.setItem('postViewMode', mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('postViewMode', mode);
+    }
     onViewChange(mode);
   };
-
-  // Don't render until mounted to avoid hydration mismatch
-  if (!isMounted) {
-    return null;
-  }
 
   return (
     <div className="flex items-center gap-2 bg-white rounded-lg shadow-md p-2">
       <span className="text-sm text-gray-600 mr-2">View:</span>
       <button
         onClick={() => handleViewChange('grid')}
-        className={`p-2 rounded transition ${
-          viewMode === 'grid'
+        className={`p-2 rounded transition ${viewMode === 'grid'
             ? 'bg-gray-800 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        }`}
+          }`}
         title="Grid View"
         aria-label="Grid View"
       >
@@ -67,11 +44,10 @@ export default function ViewToggle({ onViewChange }: ViewToggleProps) {
       </button>
       <button
         onClick={() => handleViewChange('list')}
-        className={`p-2 rounded transition ${
-          viewMode === 'list'
+        className={`p-2 rounded transition ${viewMode === 'list'
             ? 'bg-gray-800 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        }`}
+          }`}
         title="List View"
         aria-label="List View"
       >

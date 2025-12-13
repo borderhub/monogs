@@ -11,10 +11,11 @@
 - **T4-3**: 環境変数設定（NEXTAUTH_SECRET, DATABASE_URL等）
 - **T4-4**: Cloudflare Pagesプロジェクト作成・連携
 - **T4-5**: ステージング環境デプロイ・動作確認
+- **T4-6**: R2カスタムドメイン設定（設定手順準備完了）
 
-### 🔧 残りのタスク
+### 🔧 実施中のタスク
 
-- **T4-6**: R2カスタムドメイン設定
+- **T4-6**: R2カスタムドメイン設定（Cloudflareダッシュボードでの設定作業中）
 
 ## デプロイ済み環境
 
@@ -103,6 +104,11 @@ npm run db:seed:d1:local
 
 ## T4-6: R2カスタムドメイン設定
 
+**実施日**: 2025-12-11
+**R2バケット名**: `monogs-r2-upload`
+**カスタムドメイン**: `images.monogs.net`
+**状態**: 設定手順準備完了、Cloudflareダッシュボードでの作業待ち
+
 ### 1. Cloudflare R2バケットにカスタムドメインを追加
 
 1. Cloudflare ダッシュボードにアクセス
@@ -126,6 +132,35 @@ Proxy: Enabled (オレンジクラウド)
 
 1. SSL/TLS → Overview
 2. Encryption mode: Full (strict) を選択
+
+### 4. 設定完了後の確認とデプロイ
+
+カスタムドメイン設定完了後、以下を実施してください：
+
+1. **DNSの伝播確認**（数分かかる場合があります）
+   ```bash
+   nslookup images.monogs.net
+   ```
+
+2. **HTTPSアクセステスト**
+   ```bash
+   curl -I https://images.monogs.net/
+   ```
+
+3. **wrangler.tomlの環境変数を確認**
+   - `NEXT_PUBLIC_IMAGES_URL = "https://images.monogs.net"` が有効化されていることを確認
+
+4. **再デプロイ**
+   ```bash
+   # プレビュー環境
+   npm run deploy:cloudflare
+
+   # または本番環境
+   npm run deploy:cloudflare:production
+   ```
+
+5. **画像表示の確認**
+   - デプロイ後、実際のサイトで画像が正しく表示されることを確認
 
 ## トラブルシューティング
 

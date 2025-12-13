@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import SignOutButton from '@/components/SignOutButton';
 
 export default async function AdminPage() {
   const session = await auth();
@@ -41,17 +42,15 @@ export default async function AdminPage() {
             <h3 className="text-xl font-semibold mb-2">設定</h3>
             <p className="text-gray-600">サイトの基本設定を変更します</p>
           </Link>
+
+          <Link href="/admin/db" className="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <h3 className="text-xl font-semibold mb-2">データベース</h3>
+            <p className="text-gray-600">データベースの内容を確認・編集します</p>
+          </Link>
         </div>
 
         <div className="mt-8">
-          <form action="/api/auth/signout" method="POST">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
-            >
-              ログアウト
-            </button>
-          </form>
+          <SignOutButton />
         </div>
       </div>
     </div>

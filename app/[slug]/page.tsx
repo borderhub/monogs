@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getPostBySlug, getPostTags, getPosts } from '@/lib/db/queries';
 import ImageGallery from '@/components/ImageGallery';
+import { getImageUrl } from '@/lib/utils/image-path';
 import type { Metadata } from 'next';
 
 interface PostPageProps {
@@ -30,6 +31,20 @@ function extractTextFromHtml(html: string, maxLength: number = 160): string {
   return cleaned.length > maxLength
     ? cleaned.substring(0, maxLength) + '...'
     : cleaned;
+}
+
+// HTMLの画像URLを変換する関数
+function convertImageUrlsInHtml(html: string): string {
+  if (!html) return '';
+
+  // img タグの src 属性を置換
+  return html.replace(
+    /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi,
+    (match, before, src, after) => {
+      const fullUrl = getImageUrl(src);
+      return `<img${before}src="${fullUrl}"${after}>`;
+    }
+  );
 }
 
 // メタデータ生成
@@ -105,22 +120,26 @@ export default async function PostPage({ params }: PostPageProps) {
     : '';
 
   // post.html は既に convertPost 関数で生成されている
-  const contentHtml = post.html || '';
+  // 画像URLを完全なURLに変換
+  const contentHtml = convertImageUrlsInHtml(post.html || '');
 
-  // Parse gallery images from JSON
+  // Parse gallery images from JSON and convert to full URLs
   const galleryImages: string[] = post.galleryImages
-    ? JSON.parse(post.galleryImages)
+    ? JSON.parse(post.galleryImages).map((img: string) => getImageUrl(img) || img)
     : [];
+
+  // アイキャッチ画像のURLを変換
+  const featureImageUrl = getImageUrl(post.featureImage);
 
   return (
     <article className="container mx-auto px-4 py-12">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <header className="mb-8">
-          {post.featureImage && (
+          {featureImageUrl && (
             <div className="aspect-video relative mb-8 rounded-lg overflow-hidden">
               <Image
-                src={post.featureImage}
+                src={featureImageUrl}
                 alt={post.title}
                 fill
                 className="object-cover"
