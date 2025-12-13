@@ -72,7 +72,7 @@ async function uploadToR2(key, body, contentType) {
 
   try {
     // wranglerコマンドでアップロード
-    const cmd = `npx wrangler r2 object put ${r2Bucket}/${key} --file="${tmpFile}" --content-type="${contentType}"`;
+    const cmd = `npx wrangler r2 object put ${r2Bucket}/${key} --file="${tmpFile}" --content-type="${contentType}" --remote`;
     execSync(cmd, { stdio: 'pipe' });
 
     // 一時ファイルを削除

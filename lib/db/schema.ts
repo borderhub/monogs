@@ -141,11 +141,11 @@ export const sessions = sqliteTable('sessions', {
 // 型エクスポート
 // ============================================================================
 
-export type Post = typeof posts.$inferSelect;
-export type NewPost = typeof posts.$inferInsert;
+export type SelectPost = typeof posts.$inferSelect;
+export type InsertPost = typeof posts.$inferInsert;
 
-export type Tag = typeof tags.$inferSelect;
-export type NewTag = typeof tags.$inferInsert;
+export type SelectTag = typeof tags.$inferSelect;
+export type InsertTag = typeof tags.$inferInsert;
 
 export type PostTag = typeof postsTags.$inferSelect;
 export type NewPostTag = typeof postsTags.$inferInsert;

@@ -101,7 +101,7 @@ async function downloadFromMinio(key, tmpPath) {
 async function uploadToR2(key, tmpPath) {
   const contentType = getContentType(key);
 
-  const cmd = `npx wrangler r2 object put ${r2Bucket}/${key} --file="${tmpPath}" --content-type="${contentType}"`;
+  const cmd = `npx wrangler r2 object put ${r2Bucket}/${key} --file="${tmpPath}" --content-type="${contentType}" --remote`;
 
   execSync(cmd, { stdio: 'pipe' });
 }
