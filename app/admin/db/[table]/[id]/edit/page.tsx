@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import DbRecordEditForm from '@/components/admin/DbRecordEditForm';
-import { getRawDb } from '@/lib/db';
+import { getRawAdapter } from '@/lib/db';
 
 interface Column {
   name: string;
@@ -23,45 +23,38 @@ async function getRecord(
   recordId: string
 ): Promise<RecordData | null> {
   try {
-    const db = getRawDb();
+    const db = getRawAdapter();
 
-    // テーブルが存在するか確認
-    const tableExists = db
-      .prepare(
-        `SELECT name FROM sqlite_master WHERE type='table' AND name=?`
-      )
-      .get(tableName);
+    // テーブル存在確認（SQLite 前提）
+    const tableExists = await db.get(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name = ?`,
+      [tableName]
+    );
+    if (!tableExists) return null;
 
-    if (!tableExists) {
-      return null;
-    }
-
-    // テーブルのカラム情報を取得
-    const columns = db
-      .prepare(`PRAGMA table_info(${tableName})`)
-      .all() as Array<{
+    let columns;
+    try {
+      columns = await db.all<{
         cid: number;
         name: string;
         type: string;
         notnull: number;
         dflt_value: string | null;
         pk: number;
-      }>;
-
-    // Primary Keyを取得
-    const primaryKey = columns.find((col) => col.pk === 1);
-    if (!primaryKey) {
+      }>(`PRAGMA table_info(${tableName})`);
+    } catch (e) {
+      console.error('PRAGMA not supported:', e);
       return null;
     }
 
-    // レコードを取得
-    const record = db
-      .prepare(`SELECT * FROM ${tableName} WHERE ${primaryKey.name} = ?`)
-      .get(recordId);
+    const primaryKey = columns.find((c) => c.pk === 1);
+    if (!primaryKey) return null;
 
-    if (!record) {
-      return null;
-    }
+    const record = await db.get(
+      `SELECT * FROM ${tableName} WHERE ${primaryKey.name} = ?`,
+      [Number.isNaN(Number(recordId)) ? recordId : Number(recordId)]
+    );
+    if (!record) return null;
 
     return {
       table: tableName,
@@ -86,10 +79,7 @@ export default async function AdminDbRecordEditPage({
   params: Promise<{ table: string; id: string }>;
 }) {
   const session = await auth();
-
-  if (!session) {
-    redirect('/auth/signin');
-  }
+  if (!session) redirect('/auth/signin');
 
   const { table, id } = await params;
   const data = await getRecord(table, id);
@@ -98,7 +88,9 @@ export default async function AdminDbRecordEditPage({
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8">レコードが見つかりません</h1>
+          <h1 className="text-4xl font-bold mb-8">
+            レコードが見つかりません
+          </h1>
           <Link
             href={`/admin/db/${table}`}
             className="text-blue-600 hover:underline"

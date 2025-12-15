@@ -1,36 +1,50 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getRawDb } from '@/lib/db';
+import { getRawAdapter } from '@/lib/db';
+
+interface TableRow {
+  name: string;
+  sql: string;
+}
 
 export async function GET() {
   const session = await auth();
 
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
   try {
-    const db = getRawDb();
+    const db = getRawAdapter();
 
-    // SQLiteのテーブル一覧を取得
-    const tables = db
-      .prepare(
-        `SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name`
-      )
-      .all() as { name: string; sql: string }[];
+    // テーブル一覧取得（SQLite / D1 共通）
+    const tables = await db.all<TableRow>(
+      `
+      SELECT name, sql
+      FROM sqlite_master
+      WHERE type = 'table'
+        AND name NOT LIKE 'sqlite_%'
+      ORDER BY name
+      `
+    );
 
-    // 各テーブルのレコード数を取得
-    const tablesWithCount = tables.map((table) => {
-      const countResult = db
-        .prepare(`SELECT COUNT(*) as count FROM ${table.name}`)
-        .get() as { count: number };
+    // 各テーブルの件数を取得
+    const tablesWithCount = await Promise.all(
+      tables.map(async (table) => {
+        const row = await db.get<{ count: number }>(
+          `SELECT COUNT(*) as count FROM ${table.name}`
+        );
 
-      return {
-        name: table.name,
-        count: countResult.count,
-        schema: table.sql,
-      };
-    });
+        return {
+          name: table.name,
+          count: row?.count ?? 0,
+          schema: table.sql,
+        };
+      })
+    );
 
     return NextResponse.json({ tables: tablesWithCount });
   } catch (error) {

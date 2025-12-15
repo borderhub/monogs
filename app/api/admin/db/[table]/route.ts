@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getRawDb } from '@/lib/db';
+import { getRawAdapter } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -9,25 +9,30 @@ export async function GET(
   const session = await auth();
 
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
   const { table } = await params;
   const { searchParams } = new URL(request.url);
+
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '20', 10);
   const offset = (page - 1) * limit;
 
   try {
-    const db = getRawDb();
+    const db = getRawAdapter();
     const tableName = table;
 
-    // テーブルが存在するか確認
-    const tableExists = db
-      .prepare(
-        `SELECT name FROM sqlite_master WHERE type='table' AND name=?`
-      )
-      .get(tableName);
+    /* -----------------------------
+     * テーブル存在確認
+     * ----------------------------- */
+    const tableExists = await db.get(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name = ?`,
+      [tableName]
+    );
 
     if (!tableExists) {
       return NextResponse.json(
@@ -36,27 +41,33 @@ export async function GET(
       );
     }
 
-    // 総レコード数を取得
-    const countResult = db
-      .prepare(`SELECT COUNT(*) as count FROM ${tableName}`)
-      .get() as { count: number };
+    /* -----------------------------
+     * 総レコード数
+     * ----------------------------- */
+    const countRow = await db.get<{ count: number }>(
+      `SELECT COUNT(*) AS count FROM ${tableName}`
+    );
+    const total = countRow?.count ?? 0;
 
-    // テーブルのカラム情報を取得
-    const columns = db
-      .prepare(`PRAGMA table_info(${tableName})`)
-      .all() as Array<{
-        cid: number;
-        name: string;
-        type: string;
-        notnull: number;
-        dflt_value: string | null;
-        pk: number;
-      }>;
+    /* -----------------------------
+     * カラム情報
+     * ----------------------------- */
+    const columns = await db.all<{
+      cid: number;
+      name: string;
+      type: string;
+      notnull: number;
+      dflt_value: string | null;
+      pk: number;
+    }>(`PRAGMA table_info(${tableName})`);
 
-    // レコードを取得
-    const records = db
-      .prepare(`SELECT * FROM ${tableName} LIMIT ? OFFSET ?`)
-      .all(limit, offset);
+    /* -----------------------------
+     * レコード取得
+     * ----------------------------- */
+    const records = await db.all<any>(
+      `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
 
     return NextResponse.json({
       table: tableName,
@@ -71,8 +82,8 @@ export async function GET(
       pagination: {
         page,
         limit,
-        total: countResult.count,
-        totalPages: Math.ceil(countResult.count / limit),
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     });
   } catch (error) {

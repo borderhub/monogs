@@ -82,6 +82,60 @@ export const getRawDb = cache((): any => {
 });
 
 /**
+ * Raw SQL Adapter (SQLite / D1 共通)
+ */
+
+export type RawDbAdapter = {
+  get<T = any>(sql: string, params?: any[]): Promise<T | null>;
+  all<T = any>(sql: string, params?: any[]): Promise<T[]>;
+  run(sql: string, params?: any[]): Promise<void>;
+};
+
+/**
+ * Get raw SQL adapter
+ * SQLite / D1 両対応
+ */
+export const getRawAdapter = cache((): RawDbAdapter => {
+  const raw = getRawDb();
+
+  // Cloudflare D1
+  if (typeof raw?.batch === 'function') {
+    return {
+      async get(sql, params = []) {
+        const stmt = raw.prepare(sql).bind(...params);
+        return (await stmt.first()) ?? null;
+      },
+
+      async all(sql, params = []) {
+        const stmt = raw.prepare(sql).bind(...params);
+        const res = await stmt.all();
+        return res.results ?? [];
+      },
+
+      async run(sql, params = []) {
+        const stmt = raw.prepare(sql).bind(...params);
+        await stmt.run();
+      },
+    };
+  }
+
+  // SQLite (better-sqlite3)
+  return {
+    async get(sql, params = []) {
+      return raw.prepare(sql).get(...params) ?? null;
+    },
+
+    async all(sql, params = []) {
+      return raw.prepare(sql).all(...params);
+    },
+
+    async run(sql, params = []) {
+      raw.prepare(sql).run(...params);
+    },
+  };
+});
+
+/**
  * Get D1 database client (Cloudflare Workers/Pages Functions)
  * @param d1Database - D1Database instance from Cloudflare environment
  */
