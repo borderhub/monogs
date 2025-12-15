@@ -1,37 +1,64 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getRawDb } from '@/lib/db';
+import { getRawAdapter } from '@/lib/db';
 
+// 型定義は環境に合わせる必要があります
 interface Table {
   name: string;
   count: number;
   schema: string;
 }
 
+// getRawDb() の返り値の型に合わせて、D1Database または LoaclDB を想定
+type DB = any;
+
 async function getTables(): Promise<Table[]> {
   try {
-    const db = getRawDb();
+    const db = getRawAdapter();
 
-    // SQLiteのテーブル一覧を取得
-    const tables = db
-      .prepare(
-        `SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name`
-      )
-      .all() as { name: string; sql: string }[];
+    /* -----------------------------
+     * テーブル一覧取得
+     * ----------------------------- */
+    const tables = await db.all<{
+      name: string;
+      sql: string;
+    }>(`
+      SELECT name, sql
+      FROM sqlite_master
+      WHERE type = 'table'
+        AND name NOT LIKE 'sqlite_%'
+      ORDER BY name
+    `);
 
-    // 各テーブルのレコード数を取得
-    const tablesWithCount = tables.map((table) => {
-      const countResult = db
-        .prepare(`SELECT COUNT(*) as count FROM ${table.name}`)
-        .get() as { count: number };
+    /* -----------------------------
+     * 各テーブルの件数取得
+     * ----------------------------- */
+    const tablesWithCount = await Promise.all(
+      tables.map(async (table) => {
+        try {
+          const row = await db.get<{ count: number }>(
+            `SELECT COUNT(*) AS count FROM ${table.name}`
+          );
 
-      return {
-        name: table.name,
-        count: countResult.count,
-        schema: table.sql,
-      };
-    });
+          return {
+            name: table.name,
+            count: row?.count ?? 0,
+            schema: table.sql,
+          };
+        } catch (e) {
+          console.error(
+            `Error counting records for table ${table.name}:`,
+            e
+          );
+          return {
+            name: table.name,
+            count: 0,
+            schema: table.sql,
+          };
+        }
+      })
+    );
 
     return tablesWithCount;
   } catch (error) {

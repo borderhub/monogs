@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
-import { getRawDb } from '@/lib/db';
+import { getRawAdapter } from '@/lib/db';
 
 interface Column {
   name: string;
@@ -29,42 +29,44 @@ async function getTableData(
   page: number = 1
 ): Promise<TableData | null> {
   try {
-    const db = getRawDb();
+    const db = getRawAdapter();
     const limit = 20;
     const offset = (page - 1) * limit;
 
-    // テーブルが存在するか確認
-    const tableExists = db
-      .prepare(
-        `SELECT name FROM sqlite_master WHERE type='table' AND name=?`
-      )
-      .get(tableName);
+    // テーブル存在確認
+    const tableExists = await db.get<{ name: string }>(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
+      [tableName]
+    );
 
     if (!tableExists) {
       return null;
     }
 
-    // 総レコード数を取得
-    const countResult = db
-      .prepare(`SELECT COUNT(*) as count FROM ${tableName}`)
-      .get() as { count: number };
+    // 総件数
+    const countResult = await db.get<{ count: number }>(
+      `SELECT COUNT(*) as count FROM ${tableName}`
+    );
 
-    // テーブルのカラム情報を取得
-    const columns = db
-      .prepare(`PRAGMA table_info(${tableName})`)
-      .all() as Array<{
-        cid: number;
-        name: string;
-        type: string;
-        notnull: number;
-        dflt_value: string | null;
-        pk: number;
-      }>;
+    if (!countResult) {
+      return null;
+    }
 
-    // レコードを取得
-    const records = db
-      .prepare(`SELECT * FROM ${tableName} LIMIT ? OFFSET ?`)
-      .all(limit, offset);
+    // カラム情報
+    const columns = await db.all<{
+      cid: number;
+      name: string;
+      type: string;
+      notnull: number;
+      dflt_value: string | null;
+      pk: number;
+    }>(`PRAGMA table_info(${tableName})`);
+
+    // レコード取得
+    const records = await db.all(
+      `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
 
     return {
       table: tableName,
@@ -107,7 +109,9 @@ export default async function AdminTablePage({
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8">テーブルが見つかりません</h1>
+          <h1 className="text-4xl font-bold mb-8">
+            テーブルが見つかりません
+          </h1>
           <Link href="/admin/db" className="text-blue-600 hover:underline">
             ← データベース管理に戻る
           </Link>
@@ -166,7 +170,7 @@ export default async function AdminTablePage({
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {data.records.map((record, idx) => {
-                const primaryKey = data.columns.find((col) => col.primaryKey);
+                const primaryKey = data.columns.find((c) => c.primaryKey);
                 const recordId = primaryKey
                   ? record[primaryKey.name]
                   : idx;
@@ -184,7 +188,7 @@ export default async function AdminTablePage({
                         }
                       >
                         {record[col.name] !== null &&
-                        record[col.name] !== undefined
+                          record[col.name] !== undefined
                           ? String(record[col.name]).substring(0, 100)
                           : '(null)'}
                       </td>

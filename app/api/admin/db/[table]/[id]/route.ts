@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getRawDb } from '@/lib/db';
+import { getRawAdapter } from '@/lib/db';
 
+/* =================================================
+ * GET: 単一レコード取得
+ * ================================================= */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ table: string; id: string }> }
@@ -9,22 +12,26 @@ export async function GET(
   const session = await auth();
 
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
   const { table, id } = await params;
 
   try {
-    const db = getRawDb();
+    const db = getRawAdapter();
     const tableName = table;
     const recordId = id;
 
-    // テーブルが存在するか確認
-    const tableExists = db
-      .prepare(
-        `SELECT name FROM sqlite_master WHERE type='table' AND name=?`
-      )
-      .get(tableName);
+    /* -----------------------------
+     * テーブル存在確認
+     * ----------------------------- */
+    const tableExists = await db.get(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name = ?`,
+      [tableName]
+    );
 
     if (!tableExists) {
       return NextResponse.json(
@@ -33,20 +40,23 @@ export async function GET(
       );
     }
 
-    // テーブルのカラム情報を取得
-    const columns = db
-      .prepare(`PRAGMA table_info(${tableName})`)
-      .all() as Array<{
-        cid: number;
-        name: string;
-        type: string;
-        notnull: number;
-        dflt_value: string | null;
-        pk: number;
-      }>;
+    /* -----------------------------
+     * カラム情報取得
+     * ----------------------------- */
+    const columns = await db.all<{
+      cid: number;
+      name: string;
+      type: string;
+      notnull: number;
+      dflt_value: string | null;
+      pk: number;
+    }>(`PRAGMA table_info(${tableName})`);
 
-    // Primary Keyを取得
+    /* -----------------------------
+     * Primary Key 判定
+     * ----------------------------- */
     const primaryKey = columns.find((col) => col.pk === 1);
+
     if (!primaryKey) {
       return NextResponse.json(
         { error: 'Table has no primary key' },
@@ -54,10 +64,13 @@ export async function GET(
       );
     }
 
-    // レコードを取得
-    const record = db
-      .prepare(`SELECT * FROM ${tableName} WHERE ${primaryKey.name} = ?`)
-      .get(recordId);
+    /* -----------------------------
+     * レコード取得
+     * ----------------------------- */
+    const record = await db.get<any>(
+      `SELECT * FROM ${tableName} WHERE ${primaryKey.name} = ?`,
+      [recordId]
+    );
 
     if (!record) {
       return NextResponse.json(
@@ -86,6 +99,9 @@ export async function GET(
   }
 }
 
+/* =================================================
+ * PUT: 単一レコード更新
+ * ================================================= */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ table: string; id: string }> }
@@ -93,31 +109,37 @@ export async function PUT(
   const session = await auth();
 
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
   const { table, id } = await params;
 
   try {
-    const db = getRawDb();
+    const db = getRawAdapter();
     const tableName = table;
     const recordId = id;
     const body = await request.json();
 
-    // テーブルのカラム情報を取得
-    const columns = db
-      .prepare(`PRAGMA table_info(${tableName})`)
-      .all() as Array<{
-        cid: number;
-        name: string;
-        type: string;
-        notnull: number;
-        dflt_value: string | null;
-        pk: number;
-      }>;
+    /* -----------------------------
+     * カラム情報取得
+     * ----------------------------- */
+    const columns = await db.all<{
+      cid: number;
+      name: string;
+      type: string;
+      notnull: number;
+      dflt_value: string | null;
+      pk: number;
+    }>(`PRAGMA table_info(${tableName})`);
 
-    // Primary Keyを取得
+    /* -----------------------------
+     * Primary Key 判定
+     * ----------------------------- */
     const primaryKey = columns.find((col) => col.pk === 1);
+
     if (!primaryKey) {
       return NextResponse.json(
         { error: 'Table has no primary key' },
@@ -125,17 +147,26 @@ export async function PUT(
       );
     }
 
-    // Primary Key以外のカラムでUPDATE文を作成
+    /* -----------------------------
+     * UPDATE対象カラム作成
+     * ----------------------------- */
     const updateColumns = columns
       .filter((col) => col.pk !== 1)
       .map((col) => col.name);
 
-    const setClause = updateColumns.map((col) => `${col} = ?`).join(', ');
+    const setClause = updateColumns
+      .map((col) => `${col} = ?`)
+      .join(', ');
+
     const values = updateColumns.map((col) => body[col]);
 
-    const sql = `UPDATE ${tableName} SET ${setClause} WHERE ${primaryKey.name} = ?`;
+    const sql = `
+      UPDATE ${tableName}
+      SET ${setClause}
+      WHERE ${primaryKey.name} = ?
+    `;
 
-    db.prepare(sql).run(...values, recordId);
+    await db.run(sql, [...values, recordId]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
-import { getRawDb } from '@/lib/db';
+import { getRawAdapter } from '@/lib/db';
 
 interface Column {
   name: string;
@@ -29,42 +29,49 @@ async function getTableData(
   page: number
 ): Promise<TableData | null> {
   try {
-    const db = getRawDb();
+    const db = getRawAdapter();
     const limit = 20;
     const offset = (page - 1) * limit;
 
-    // テーブルが存在するか確認
-    const tableExists = db
-      .prepare(
-        `SELECT name FROM sqlite_master WHERE type='table' AND name=?`
-      )
-      .get(tableName);
+    /* -----------------------------
+     * テーブル存在確認
+     * ----------------------------- */
+    const tableExists = await db.get(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name = ?`,
+      [tableName]
+    );
 
     if (!tableExists) {
       return null;
     }
 
-    // 総レコード数を取得
-    const countResult = db
-      .prepare(`SELECT COUNT(*) as count FROM ${tableName}`)
-      .get() as { count: number };
+    /* -----------------------------
+     * 総レコード数
+     * ----------------------------- */
+    const countRow = await db.get<{ count: number }>(
+      `SELECT COUNT(*) AS count FROM ${tableName}`
+    );
+    const total = countRow?.count ?? 0;
 
-    // テーブルのカラム情報を取得
-    const columns = db
-      .prepare(`PRAGMA table_info(${tableName})`)
-      .all() as Array<{
-        cid: number;
-        name: string;
-        type: string;
-        notnull: number;
-        dflt_value: string | null;
-        pk: number;
-      }>;
+    /* -----------------------------
+     * カラム情報
+     * ----------------------------- */
+    const columns = await db.all<{
+      cid: number;
+      name: string;
+      type: string;
+      notnull: number;
+      dflt_value: string | null;
+      pk: number;
+    }>(`PRAGMA table_info(${tableName})`);
 
-    // レコードを取得
-    const records = db
-      .prepare(`SELECT * FROM ${tableName} LIMIT ? OFFSET ?`)
-      .all(limit, offset);
+    /* -----------------------------
+     * レコード取得
+     * ----------------------------- */
+    const records = await db.all<any>(
+      `SELECT * FROM ${tableName} LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
 
     return {
       table: tableName,
@@ -79,8 +86,8 @@ async function getTableData(
       pagination: {
         page,
         limit,
-        total: countResult.count,
-        totalPages: Math.ceil(countResult.count / limit),
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     };
   } catch (error) {
@@ -185,7 +192,7 @@ export default async function AdminTablePageWithPagination({
                         }
                       >
                         {record[col.name] !== null &&
-                        record[col.name] !== undefined
+                          record[col.name] !== undefined
                           ? String(record[col.name]).substring(0, 100)
                           : '(null)'}
                       </td>
