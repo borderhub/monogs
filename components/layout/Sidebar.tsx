@@ -21,7 +21,6 @@ const adminNavItems = [
   { label: 'タグ管理', url: '/admin/tags' },
   { label: 'メディア管理', url: '/admin/media' },
   { label: '設定', url: '/admin/settings' },
-  { label: 'データベース', url: '/admin/db' },
 ];
 
 export default function Sidebar() {
@@ -39,7 +38,7 @@ export default function Sidebar() {
     const isDesktop = window.innerWidth >= 1024;
 
     if (stored !== null) {
-      setIsOpen(stored === 'true');
+      setIsOpen(stored === 'true' && isDesktop);
     } else {
       // Default: open on desktop, closed on mobile
       setIsOpen(isDesktop);
