@@ -21,7 +21,6 @@ export default function Pagination({
 
   // ページ番号からURLを生成する関数
   const getPageUrl = (pageNum: number) => {
-    console.log(`${baseUrl}/${pageNum}`)
     if (pageNum === 1) {
       return homeUrl;
     }
