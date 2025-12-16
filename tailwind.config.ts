@@ -20,6 +20,16 @@ const config: Config = {
         // Inter font stack (参照サイトと同様)
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
       },
+      keyframes: {
+        revolution: {
+          '0%': { transform: 'rotateY(0deg) translate3d(var(--orbit-radius), 0, 0) rotateY(0deg)' },
+          '100%': { transform: 'rotateY(360deg) translate3d(var(--orbit-radius), 0, 0) rotateY(-360deg)' },
+        },
+      },
+      // 2. アニメーションクラスの定義 (CSS変数を使用)
+      animation: {
+        revolution: 'revolution var(--revolution-duration) linear infinite',
+      },
     },
   },
   plugins: [
