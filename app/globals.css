@@ -131,3 +131,27 @@ button {
     flex: 1 1 100%;
   }
 }
+
+@layer utilities {
+  .animate-slow-rotate {
+    animation: slow-rotate 80s linear infinite;
+  }
+
+  @keyframes slow-rotate {
+    from {
+      transform: rotateX(15deg) rotateY(10deg) rotateY(0deg);
+    }
+
+    to {
+      transform: rotateX(15deg) rotateY(10deg) rotateY(360deg);
+    }
+  }
+
+  .rotate-x-15 {
+    transform: rotateX(15deg);
+  }
+
+  .rotate-y-10 {
+    transform: rotateY(10deg);
+  }
+}
