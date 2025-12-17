@@ -26,6 +26,80 @@ div {
   white-space: break-spaces;
 }
 
+ul {
+  list-style-type: none;
+}
+
+li {
+  line-height: 1.6;
+  color: #333;
+}
+
+/* リスト全体のスタイル */
+ol {
+  list-style: none;
+  /* 標準の番号を消す */
+  padding: 0;
+  margin: 0;
+}
+
+/* 各項目の親要素 */
+ol li {
+  position: relative;
+  padding-left: 40px;
+  /* 左側に番号と線を置くスペースを確保 */
+  margin-bottom: 20px;
+  /* 項目間の余白 */
+  line-height: 1.5;
+}
+
+/* 縦線の設定 */
+ol li::after {
+  content: "";
+  position: absolute;
+  left: 15px;
+  /* 番号の中央に合わせる */
+  top: 30px;
+  /* 番号の下からスタート */
+  bottom: -20px;
+  /* 次の項目まで伸ばす */
+  width: 2px;
+  background-color: #333;
+  /* 線の色 */
+}
+
+/* 最後の項目の縦線だけ消す */
+ol li:last-child::after {
+  display: none;
+}
+
+/* 番号（丸いアイコン）の設定 */
+ol li::before {
+  content: counter(li-counter);
+  /* 自動採番 */
+  counter-increment: li-counter;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  background-color: #333;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 1;
+  /* 線より上に表示 */
+}
+
+/* カウンターの初期化 */
+ol {
+  counter-reset: li-counter;
+}
+
 button {
   cursor: pointer;
 }
@@ -33,14 +107,157 @@ button {
 .prose a,
 .prose a:visited,
 .prose a:link {
-  /* !important は最終手段ですが、proseのデフォルトスタイルを確実に上書きするために必要になることが多いです */
   color: #155dfc !important;
   text-decoration: none !important;
 }
 
 .prose a:hover {
-  /* !important は最終手段ですが、proseのデフォルトスタイルを確実に上書きするために必要になることが多いです */
   color: #7da3f4 !important;
+}
+
+pre {
+  /* 基本的なスタイル */
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  /* 等幅フォント */
+  background-color: #f4f4f4;
+  /* 背景色 */
+  color: #333;
+  /* 文字色 */
+  padding: 15px;
+  /* 内側の余白 */
+  border: 1px solid #ddd;
+  /* 枠線 */
+  border-radius: 5px;
+  /* 角丸 */
+  overflow-x: auto;
+  /* 横スクロールを可能にする */
+  white-space: pre-wrap;
+  /* 折り返しを有効にしつつ空白も保持 */
+}
+
+/* コード内の単語を色付けする (シンタックスハイライトの例) */
+pre code {
+  color: #007acc;
+  /* コードブロック内の文字色 */
+}
+
+/* キーワードなどを強調したい場合 */
+pre code .keyword {
+  color: #0000ff;
+  /* 青色 */
+  font-weight: bold;
+}
+
+pre code .string {
+  color: #a31515;
+  /* 赤色 */
+}
+
+/* マークダウン全体を囲むクラス（例: .posts）に適用を推奨 */
+.posts {
+  line-height: 1.4;
+  color: #24292f;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+
+/* 段落の余白 */
+.posts p {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+/* 見出しのスタイル */
+.posts h1,
+.posts h2 {
+  padding-bottom: .3em;
+  border-bottom: 1px solid #eaecef;
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+/* コードブロック全体の背景 */
+.posts pre {
+  padding: 16px;
+  overflow: auto;
+  /* 長いコードを横スクロールさせる */
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  /* 薄いグレーの背景 */
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+/* インラインコード（文章中の `code` ） */
+.posts code {
+  padding: .2em .4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(175, 184, 193, 0.2);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* preの中にあるcodeの背景は消す */
+.posts pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: 100%;
+}
+
+/* 箇条書きリスト */
+.posts ul {
+  list-style-type: disc;
+}
+
+.posts ul,
+.posts ol {
+  padding-left: 2em;
+  /* 左側のインデント */
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+/* 各項目 */
+.posts li {
+  margin-top: 0.25em;
+  /* 項目間の微調整 */
+}
+
+/* リスト内のリスト（ネスト）の余白を消す */
+.posts li>ul,
+.posts li>ol {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* 引用ブロック */
+.posts blockquote {
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: .25em solid #dfe2e5;
+  /* 左側の縦線 */
+  margin: 0 0 16px 0;
+}
+
+/* テーブル */
+.posts table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.posts table th,
+.posts table td {
+  padding: 6px 13px;
+  border: 1px solid #dfe2e5;
+}
+
+.posts table tr:nth-child(2) {
+  background-color: #f6f8fa;
+  /* 1行おきに色を変える */
 }
 
 @layer utilities {
