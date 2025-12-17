@@ -190,7 +190,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
         {/* Content */}
         <div
-          className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-cyan-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto prose-table:block prose-table:overflow-x-auto prose-pre:max-w-full prose-pre:overflow-x-auto w-full"
+          className="posts prose prose-lg max-w-none prose-headings:font-bold prose-a:text-cyan-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto prose-table:block prose-table:overflow-x-auto prose-pre:max-w-full prose-pre:overflow-x-auto w-full"
           dangerouslySetInnerHTML={{ __html: contentHtml }}
         />
 
