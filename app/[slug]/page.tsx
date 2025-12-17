@@ -1,7 +1,6 @@
-import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getPostBySlug, getPostTags, getPosts } from '@/lib/db/queries';
+import { getPostBySlug, getPostTags, getPosts, getSettings } from '@/lib/db/queries';
 import ImageGallery from '@/components/ImageGallery';
 import { getImageUrl } from '@/lib/utils/image-path';
 import type { Metadata } from 'next';
@@ -62,8 +61,19 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   const description = post.customExcerpt ||
     (post.html ? extractTextFromHtml(post.html) : undefined);
 
-  // 画像URLを決定
-  const imageUrl = post.featureImage || undefined;
+  // 画像URLを決定（完全なURLに変換）
+  let imageUrl: string | undefined = undefined;
+
+  if (post.featureImage) {
+    // 記事のアイキャッチ画像がある場合
+    imageUrl = getImageUrl(post.featureImage) || undefined;
+  } else {
+    // アイキャッチ画像がない場合はデフォルトOG画像を取得
+    const settings = await getSettings(['og_image']);
+    if (settings.og_image) {
+      imageUrl = getImageUrl(settings.og_image) || undefined;
+    }
+  }
 
   return {
     title: `${post.title} | monogs`,
@@ -132,19 +142,19 @@ export default async function PostPage({ params }: PostPageProps) {
   const featureImageUrl = getImageUrl(post.featureImage);
 
   return (
-    <article className="container mx-auto px-4 py-12">
-      <div className="max-w-3xl mx-auto">
+    <article className="container mx-auto px-4 py-12 overflow-x-hidden">
+      <div className="max-w-3xl mx-auto w-full">
         {/* Header */}
         <header className="mb-8">
           {featureImageUrl && (
-            <div className="aspect-video relative mb-8 rounded-lg overflow-hidden">
+            <div className="aspect-video relative mb-8 rounded-lg overflow-hidden w-full">
               <Image
                 src={featureImageUrl}
                 alt={post.title}
                 fill
                 className="object-cover"
                 priority
-                sizes="(max-width: 768px) 100vw, 768px"
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 768px, 768px"
               />
             </div>
           )}
@@ -180,7 +190,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
         {/* Content */}
         <div
-          className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg"
+          className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-cyan-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg prose-img:max-w-full prose-img:h-auto prose-table:block prose-table:overflow-x-auto prose-pre:max-w-full prose-pre:overflow-x-auto w-full"
           dangerouslySetInnerHTML={{ __html: contentHtml }}
         />
 

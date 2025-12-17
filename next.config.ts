@@ -1,6 +1,15 @@
 import type { NextConfig } from 'next';
 
+// 本番環境かどうかを判定（ローカル開発以外はすべて本番扱い）
+const isProduction = process.env.NODE_ENV !== 'development';
+
 const nextConfig: NextConfig = {
+  // 環境変数の設定（NEXT_PUBLIC_* はクライアントに埋め込まれる）
+  env: {
+    NEXT_PUBLIC_IMAGES_URL: isProduction
+      ? 'https://images.monogs.net'
+      : 'http://localhost:9000/monogs-images',
+  },
   // 画像最適化（Cloudflare R2対応）
   images: {
     // Cloudflare Workers環境では画像最適化がサポートされないため unoptimized: true

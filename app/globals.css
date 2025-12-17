@@ -30,44 +30,17 @@ button {
   cursor: pointer;
 }
 
-/* 印刷用CSS（Googleスライド風） */
-@media print {
-  @page {
-    size: A4 landscape;
-    margin: 1.5cm;
-  }
+.prose a,
+.prose a:visited,
+.prose a:link {
+  /* !important は最終手段ですが、proseのデフォルトスタイルを確実に上書きするために必要になることが多いです */
+  color: #155dfc !important;
+  text-decoration: none !important;
+}
 
-  body {
-    background: white !important;
-    font-size: 28pt !important;
-    line-height: 1.8 !important;
-    color: black !important;
-  }
-
-  article {
-    max-width: none !important;
-    padding: 3rem !important;
-  }
-
-  h1 {
-    font-size: 48pt !important;
-    color: #1a0dab !important;
-    page-break-after: avoid;
-  }
-
-  nav,
-  footer,
-  button,
-  aside,
-  [class*='print:hidden'],
-  [class*='print\\:hidden'] {
-    display: none !important;
-  }
-
-  .prose :where(h2):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
-    font-size: 36pt !important;
-    margin-top: 1em !important;
-  }
+.prose a:hover {
+  /* !important は最終手段ですが、proseのデフォルトスタイルを確実に上書きするために必要になることが多いです */
+  color: #7da3f4 !important;
 }
 
 @layer utilities {
@@ -90,6 +63,8 @@ button {
   flex-direction: column;
   gap: 0.5rem;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .kg-gallery-row {
@@ -97,16 +72,19 @@ button {
   flex-direction: row;
   justify-content: center;
   gap: 0.5rem;
+  max-width: 100%;
 }
 
 .kg-gallery-image {
   flex: 1 1 0%;
   min-width: 0;
+  max-width: 100%;
 }
 
 .kg-gallery-image img {
   width: 100%;
   height: 100%;
+  max-width: 100%;
   object-fit: cover;
   display: block;
 }
@@ -123,6 +101,12 @@ button {
 
 /* Responsive gallery */
 @media (max-width: 768px) {
+  div {
+    white-space: break-spaces;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
   .kg-gallery-row {
     flex-direction: column;
   }

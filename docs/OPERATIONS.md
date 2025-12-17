@@ -204,3 +204,57 @@ npm run storage:logs
 |------|---------------|
 | Preview | https://images-preview.monogs.net |
 | Production | https://images.monogs.net |
+
+## 10. ロールバック手順
+
+### 10.1 Workerのバージョンロールバック
+
+デプロイ後に問題が発生した場合、以前のバージョンにロールバックできます。
+
+```bash
+# デプロイ履歴を確認
+npx wrangler deployments list --env preview
+npx wrangler deployments list --env production
+
+# 特定のバージョンにロールバック
+npx wrangler rollback <version-id> --env preview
+npx wrangler rollback <version-id> --env production
+```
+
+### 10.2 Cloudflare Dashboardからのロールバック
+
+1. https://dash.cloudflare.com にログイン
+2. **Workers & Pages** を選択
+3. `monogs-preview` または `monogs-production` を選択
+4. **Deployments** タブを開く
+5. 以前のデプロイを選択し「Rollback to this deployment」をクリック
+
+### 10.3 カスタムドメインの削除（緊急時）
+
+カスタムドメインに問題がある場合：
+
+```bash
+# wrangler.tomlからroutesを一時的に削除後、再デプロイ
+# または Cloudflare Dashboard > Workers > Settings > Triggers でドメインを削除
+```
+
+### 10.4 DNSを元に戻す（旧環境への切り戻し）
+
+旧Ghost環境に戻す必要がある場合：
+
+1. Cloudflare Dashboard > DNS > Records を開く
+2. Workers Custom Domain（自動作成されたCNAME）を削除
+3. 旧VPSのIPアドレスでAレコードを再作成
+
+**旧Ghost VPS情報（メモしておくこと）:**
+- IPアドレス: `___.___.___.___`（要記録）
+- TTL: 300秒推奨
+
+## 11. 現在のバージョン情報
+
+| 環境 | Version ID | デプロイ日時 |
+|------|------------|-------------|
+| Preview | `31640341-4983-4625-aea4-5f0102dce4c8` | 2025-12-16 |
+| Production | `91be3ef0-19c5-44bf-9f82-3e67ec2a7eb9` | 2025-12-16 |
+
+> **注意**: デプロイ毎にVersion IDは変わります。重要なデプロイ後は上記を更新してください。
