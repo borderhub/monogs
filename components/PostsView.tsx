@@ -6,13 +6,12 @@ import PostList from '@/components/post/PostList';
 import PostSpace from '@/components/post/PostSpace';
 import ViewToggle from '@/components/ViewToggle';
 import SearchBar from '@/components/SearchBar';
-import type { Post, Tag } from '@/lib/db/queries';
-import { EXCLUDED_TAG_SLUGS } from '@/lib/config/excluded-tags';
+import type { PostWithTags, Tag } from '@/lib/db/queries';
 
 type ViewMode = 'grid' | 'list' | 'space';
 
 interface PostsViewProps {
-  posts: Post[];
+  posts: PostWithTags[];
   tags?: Tag[]
 }
 
@@ -28,21 +27,15 @@ export default function PostsView({ posts, tags }: PostsViewProps) {
 
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
 
-  const allowedPosts = (post: Post) => {
-    return (
-      !EXCLUDED_TAG_SLUGS.includes(post.slug) &&
-      ((tags && tags.length > 0) || !tags)
-    );
-  };
-
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
   };
 
-  const filteredPosts = posts.filter(allowedPosts);
+  // getPosts関数で既にEXCLUDED_TAG_SLUGSによるフィルタリングが実行されているため、
+  // ここでは追加のフィルタリングは不要
 
   return (
-    <div className="space-y-6">
+    <div className="posts space-y-6">
       {/* View Toggle */}
       <div className="flex items-center justify-between mb-6 gap-2">
         <div className="flex-2 max-w-3xl">
@@ -56,7 +49,7 @@ export default function PostsView({ posts, tags }: PostsViewProps) {
       {/* Posts Display */}
       {viewMode === 'grid' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPosts.map((post) => (
+          {posts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
         </div>
@@ -64,14 +57,14 @@ export default function PostsView({ posts, tags }: PostsViewProps) {
 
       {viewMode === 'list' && (
         <div className="space-y-6">
-          {filteredPosts.map((post) => (
+          {posts.map((post) => (
             <PostList key={post.id} post={post} />
           ))}
         </div>
       )}
 
       {viewMode === 'space' && (
-        <PostSpace posts={filteredPosts} />
+        <PostSpace posts={posts} />
       )}
     </div>
   );

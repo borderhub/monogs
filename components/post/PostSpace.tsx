@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Post } from '@/lib/db/queries';
+import type { PostWithTags } from '@/lib/db/queries';
 import PostCard from './PostCard';
 
 interface Props {
-    posts: Post[];
+    posts: PostWithTags[];
 }
 
 export default function PostSpace({ posts }: Props) {

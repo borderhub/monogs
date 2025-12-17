@@ -123,6 +123,30 @@ export function migrateImagePath(oldPath: string, slug: string): string | null {
 }
 
 /**
+ * Cloudflare Workers環境から画像URLのベースを取得
+ */
+function getImagesBaseUrl(): string {
+  // クライアントサイド
+  if (typeof window !== 'undefined') {
+    return process.env.NEXT_PUBLIC_IMAGES_URL || 'https://images.monogs.net';
+  }
+
+  // サーバーサイド（Cloudflare Workers）
+  try {
+    const { getCloudflareContext } = require('@opennextjs/cloudflare');
+    const { env } = getCloudflareContext();
+    if (env?.NEXT_PUBLIC_IMAGES_URL) {
+      return env.NEXT_PUBLIC_IMAGES_URL;
+    }
+  } catch {
+    // OpenNext環境でない場合
+  }
+
+  // フォールバック（ローカル開発 or 環境変数）
+  return process.env.NEXT_PUBLIC_IMAGES_URL || 'https://images.monogs.net';
+}
+
+/**
  * 画像パスを完全なURLに変換する
  * @param path - 画像パス（例: /content/images/2025/10/slug/image.jpg）
  * @returns 完全なURL
@@ -136,9 +160,7 @@ export function getImageUrl(path: string | null | undefined): string | null {
   }
 
   // 画像ベースURL（環境変数から取得）
-  const imagesUrl = typeof window !== 'undefined'
-    ? process.env.NEXT_PUBLIC_IMAGES_URL
-    : process.env.NEXT_PUBLIC_IMAGES_URL || 'http://localhost:9000/monogs-images';
+  const imagesUrl = getImagesBaseUrl();
 
   // パスの正規化: 先頭の/を削除
   const imagePath = path.startsWith('/') ? path.substring(1) : path;

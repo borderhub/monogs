@@ -62,16 +62,19 @@ export async function POST(request: NextRequest) {
     const storageClient = getStorageClient();
     const result = await storageClient.upload(key, buffer, file.type);
 
+    // 相対パスで返す（DBに保存する形式）
+    const relativePath = `/${key}`;
+
     console.log('File uploaded successfully:', {
       name: file.name,
       type: file.type,
       size: file.size,
       key: result.key,
-      url: result.url,
+      relativePath: relativePath,
     });
 
     return NextResponse.json({
-      url: result.url,
+      url: relativePath, // 相対パスで返す
       filename: file.name,
       size: file.size,
       type: file.type,

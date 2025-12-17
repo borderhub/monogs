@@ -46,6 +46,8 @@ export interface Tag {
   updatedAt: string | null;
 }
 
+export type PostWithTags = Post & { tags: Tag[] };
+
 /**
  * Convert database post to application Post type
  */
@@ -87,10 +89,12 @@ function convertPost(raw: typeof posts.$inferSelect): Post {
 }
 
 /**
- * Filter posts by excluded tags (optimized - single query)
+ * Filter posts by tags (optimized - single query)
+ * - Exclude posts without any tags
+ * - Exclude posts with excluded tags
  */
 async function filterPostsByExcludedTags(posts: Post[]): Promise<Post[]> {
-  if (EXCLUDED_TAG_SLUGS.length === 0 || posts.length === 0) {
+  if (posts.length === 0) {
     return posts;
   }
 
@@ -107,16 +111,75 @@ async function filterPostsByExcludedTags(posts: Post[]): Promise<Post[]> {
     .innerJoin(tags, eq(postsTags.tagId, tags.id))
     .where(inArray(postsTags.postId, postIds));
 
-  // Build a set of post IDs that have excluded tags
+  // Build sets for filtering
+  const postsWithTags = new Set<string>();
   const excludedPostIds = new Set<string>();
+
   allPostTags.forEach((pt: any) => {
+    postsWithTags.add(pt.postId);
     if (EXCLUDED_TAG_SLUGS.includes(pt.tagSlug)) {
       excludedPostIds.add(pt.postId);
     }
   });
 
-  // Filter out posts with excluded tags
-  return posts.filter(post => !excludedPostIds.has(post.id));
+  // Filter: must have tags AND not have excluded tags
+  return posts.filter(post => postsWithTags.has(post.id) && !excludedPostIds.has(post.id));
+}
+
+/**
+ * Attach tags to posts (optimized - single query)
+ */
+async function attachTagsToPosts(posts: Post[]): Promise<PostWithTags[]> {
+  if (posts.length === 0) {
+    return posts as PostWithTags[];
+  }
+
+  const db = getDb();
+  const postIds = posts.map(p => p.id);
+
+  // Get all tags for all posts in a single query
+  const postTagsData = await db
+    .select({
+      postId: postsTags.postId,
+      tagId: tags.id,
+      tagName: tags.name,
+      tagSlug: tags.slug,
+      tagDescription: tags.description,
+      tagFeatureImage: tags.featureImage,
+      tagCreatedAt: tags.createdAt,
+      tagUpdatedAt: tags.updatedAt,
+      sortOrder: postsTags.sortOrder,
+    })
+    .from(postsTags)
+    .innerJoin(tags, eq(postsTags.tagId, tags.id))
+    .where(inArray(postsTags.postId, postIds))
+    .orderBy(postsTags.sortOrder);
+
+  // Group tags by post ID
+  const tagsByPostId = new Map<string, Tag[]>();
+  postTagsData.forEach((data: any) => {
+    if (!tagsByPostId.has(data.postId)) {
+      tagsByPostId.set(data.postId, []);
+    }
+    tagsByPostId.get(data.postId)!.push({
+      id: data.tagId,
+      name: data.tagName,
+      slug: data.tagSlug,
+      description: data.tagDescription,
+      featureImage: data.tagFeatureImage,
+      visibility: 'public',
+      metaTitle: null,
+      metaDescription: null,
+      createdAt: data.tagCreatedAt,
+      updatedAt: data.tagUpdatedAt || null,
+    });
+  });
+
+  // Attach tags to posts
+  return posts.map(post => ({
+    ...post,
+    tags: tagsByPostId.get(post.id) || [],
+  }));
 }
 
 /**
@@ -137,7 +200,7 @@ export async function getAllPosts(): Promise<Post[]> {
 /**
  * Get all published posts with optional limit
  */
-export async function getPosts(limit?: number): Promise<Post[]> {
+export async function getPosts(limit?: number): Promise<PostWithTags[]> {
   const db = getDb();
 
   let query = db
@@ -155,9 +218,10 @@ export async function getPosts(limit?: number): Promise<Post[]> {
   const result = await query;
   const allPosts = result.map(convertPost);
   const filteredPosts = await filterPostsByExcludedTags(allPosts);
+  const postsWithTags = await attachTagsToPosts(filteredPosts);
 
   // Apply the actual limit after filtering
-  return limit ? filteredPosts.slice(0, limit) : filteredPosts;
+  return limit ? postsWithTags.slice(0, limit) : postsWithTags;
 }
 
 /**
@@ -250,7 +314,7 @@ export async function getTagBySlug(slug: string): Promise<Tag | null> {
 /**
  * Search posts by keyword
  */
-export async function searchPosts(keyword: string): Promise<Post[]> {
+export async function searchPosts(keyword: string): Promise<PostWithTags[]> {
   if (!keyword || keyword.trim() === '') {
     return [];
   }
@@ -277,13 +341,14 @@ export async function searchPosts(keyword: string): Promise<Post[]> {
   });
 
   const allPosts = filtered.map(convertPost);
-  return await filterPostsByExcludedTags(allPosts);
+  const filteredPosts = await filterPostsByExcludedTags(allPosts);
+  return await attachTagsToPosts(filteredPosts);
 }
 
 /**
  * Get posts by tag
  */
-export async function getPostsByTag(tagSlug: string): Promise<Post[]> {
+export async function getPostsByTag(tagSlug: string): Promise<PostWithTags[]> {
   const tag = await getTagBySlug(tagSlug);
   if (!tag) return [];
 
@@ -310,13 +375,14 @@ export async function getPostsByTag(tagSlug: string): Promise<Post[]> {
     )
     .orderBy(desc(posts.publishedAt));
 
-  return result.map(convertPost);
+  const allPosts = result.map(convertPost);
+  return await attachTagsToPosts(allPosts);
 }
 
 /**
  * Get featured posts
  */
-export async function getFeaturedPosts(): Promise<Post[]> {
+export async function getFeaturedPosts(): Promise<PostWithTags[]> {
   const db = getDb();
 
   const result = await db
@@ -332,7 +398,9 @@ export async function getFeaturedPosts(): Promise<Post[]> {
     .orderBy(desc(posts.publishedAt))
     .limit(5);
 
-  return result.map(convertPost);
+  const allPosts = result.map(convertPost);
+  const filteredPosts = await filterPostsByExcludedTags(allPosts);
+  return await attachTagsToPosts(filteredPosts);
 }
 
 /**
@@ -430,7 +498,7 @@ export async function getArchiveList(): Promise<ArchiveMonth[]> {
 export async function getPostsByYearMonth(
   year: number,
   month: number
-): Promise<Post[]> {
+): Promise<PostWithTags[]> {
   const db = getDb();
 
   const result = await db
@@ -447,7 +515,8 @@ export async function getPostsByYearMonth(
   });
 
   const allPosts = filtered.map(convertPost);
-  return await filterPostsByExcludedTags(allPosts);
+  const filteredPosts = await filterPostsByExcludedTags(allPosts);
+  return await attachTagsToPosts(filteredPosts);
 }
 
 /**
@@ -456,7 +525,7 @@ export async function getPostsByYearMonth(
 export async function getRelatedPosts(
   postId: string,
   limit: number = 5
-): Promise<Post[]> {
+): Promise<PostWithTags[]> {
   const db = getDb();
 
   // Get tags for the current post
@@ -513,9 +582,10 @@ export async function getRelatedPosts(
 
   const allPosts = result.map(convertPost);
   const filteredPosts = await filterPostsByExcludedTags(allPosts);
+  const postsWithTags = await attachTagsToPosts(filteredPosts);
 
   // Re-sort by tag match count and limit
-  const finalPosts = filteredPosts
+  const finalPosts = postsWithTags
     .sort((a, b) => {
       const aCount = postTagCounts.get(a.id) || 0;
       const bCount = postTagCounts.get(b.id) || 0;
