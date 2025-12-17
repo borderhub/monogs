@@ -5,7 +5,7 @@ import PostsView from '@/components/PostsView';
 import Pagination from '@/components/Pagination';
 import type { Metadata } from 'next';
 
-const POSTS_PER_PAGE = 10;
+const POSTS_PER_PAGE = 9;
 
 interface TagPageProps {
   params: Promise<{

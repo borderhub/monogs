@@ -3,7 +3,7 @@ import { getPostsByYearMonth, getTags } from '@/lib/db/queries';
 import PostsView from '@/components/PostsView';
 import Pagination from '@/components/Pagination';
 
-const POSTS_PER_PAGE = 10;
+const POSTS_PER_PAGE = 9;
 
 interface ArchiveYearMonthPageProps {
   params: Promise<{ year: string; month: string }>;
