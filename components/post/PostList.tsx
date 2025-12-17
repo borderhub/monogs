@@ -13,10 +13,10 @@ export default function PostList({ post }: PostListProps) {
   const publishedDate = dateString ? new Date(dateString) : new Date();
   const formattedDate = !isNaN(publishedDate.getTime())
     ? publishedDate.toLocaleDateString('ja-JP', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
     : '';
 
   // 抜粋テキストを取得（customExcerptまたはhtmlから生成）
@@ -37,6 +37,7 @@ export default function PostList({ post }: PostListProps) {
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 33vw"
+              loading="eager"
             />
           </div>
         )}
@@ -56,13 +57,12 @@ export default function PostList({ post }: PostListProps) {
             {post.tags && post.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {post.tags.map((tag) => (
-                  <Link
+                  <p
                     key={tag.id}
-                    href={`/tag/${tag.slug}`}
                     className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
                   >
                     {tag.name}
-                  </Link>
+                  </p>
                 ))}
               </div>
             )}

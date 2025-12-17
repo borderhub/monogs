@@ -36,6 +36,7 @@ export default function PostCard({ post }: PostCardProps) {
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              loading="eager"
             />
           </div>
         )}
@@ -52,14 +53,13 @@ export default function PostCard({ post }: PostCardProps) {
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
               {post.tags.map((tag) => (
-                <Link
+                <p
                   key={tag.id}
-                  href={`/tag/${tag.slug}`}
                   className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {tag.name}
-                </Link>
+                </p>
               ))}
             </div>
           )}
