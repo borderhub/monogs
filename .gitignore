@@ -75,3 +75,5 @@ migration-data/*.json
 Thumbs.db
 
 migration-data/
+
+wrangler.toml
