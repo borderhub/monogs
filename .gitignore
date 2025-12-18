@@ -73,3 +73,5 @@ migration-data/*.json
 # OS
 .DS_Store
 Thumbs.db
+
+migration-data/
